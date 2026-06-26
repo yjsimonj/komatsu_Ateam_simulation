@@ -17,6 +17,7 @@ from physics.integrator import InitialConditions, simulate
 from physics import constants as C
 from presets import PRESETS
 from ui import plots
+from ui.anim import make_top_gif
 from ui.research import RESEARCH
 
 LATEX = [
@@ -68,34 +69,31 @@ def panel_markdown(preset_key, AR, mass_g, cm_low, f_rim, mu, a_mm, omega0,
 
     rpm = s.omega_crit * 60 / (2 * math.pi) if math.isfinite(s.omega_crit) else float("inf")
     md = f"""
-### 파생 물리량 (구조 → 물리)
-| 물리량 | 값 |
-| --- | --- |
-| 질량 $m$ | **{_fmt(s.m*1000,'g')}**{A('m',s.m)} |
-| 무게중심 $l$ | **{_fmt(s.l*1000,'mm')}**{A('l',s.l)} |
-| 대칭축 관성 $I_3$ | **{_fmt(s.I3*1e7,'g·cm²')}**{A('I3',s.I3)} |
-| 가로축 관성 $I_1$ (팁) | **{_fmt(s.I1*1e7,'g·cm²')}**{A('I1',s.I1)} |
-| $I_{{1,cm}}$ | {_fmt(s.I1_cm*1e7,'g·cm²')} |
-| 마찰계수 $\\mu$ | {_fmt(s.mu,'',2)} |
-| 팁 곡률 $a$ | {_fmt(s.a*1000,'mm')} |
-| 공기저항 $b,\\,c$ | {_fmt(s.b,'',2)}, {_fmt(s.c,'',2)} |
+#### 물리량
+| | |
+|--|--|
+| 질량 m | **{_fmt(s.m*1000,'g',3)}**{A('m',s.m)} |
+| 무게중심 l | **{_fmt(s.l*1000,'mm',3)}**{A('l',s.l)} |
+| 회전관성 I₃ | **{_fmt(s.I3*1e7,'g·cm²',3)}**{A('I3',s.I3)} |
+| 가로관성 I₁ | {_fmt(s.I1*1e7,'g·cm²',3)}{A('I1',s.I1)} |
+| 마찰 μ | {_fmt(s.mu,'',2)} |
 
-### 안정성 지표
-| 지표 | 값 |
-| --- | --- |
-| 임계 각속도 $\\omega_{{crit}}=\\frac{{2\\sqrt{{mgl I_1}}}}{{I_3}}$ | **{_fmt(s.omega_crit,'rad/s',4)}** ({rpm:.0f} rpm){A('wc',s.omega_crit)} |
-| 정상 세차율 $\\Omega_0=\\frac{{mgl}}{{I_3\\omega_0}}$ | {_fmt(s.Omega0,'rad/s',3)} |
-| 예측 지속시간 $t\\approx\\frac{{I_3\\omega_0}}{{\\frac23\\mu mga}}$ | **{_fmt(s.t_pred,'s',3)}**{A('t',s.t_pred)} |
-| 결합량 $mgl\\,I_1/I_3^2$ | {_fmt(s.bundle,'s⁻²',3)} |
+#### 안정성
+| | |
+|--|--|
+| 임계 각속도 ω_crit | **{_fmt(s.omega_crit,'rad/s',3)}**{A('wc',s.omega_crit)} |
+| | <sub>{rpm:.0f} rpm</sub> |
+| 세차율 Ω₀ | {_fmt(s.Omega0,'rad/s',3)} |
+| 예측 지속시간 | **{_fmt(s.t_pred,'s',3)}**{A('t',s.t_pred)} |
 
-<sub>ω₀ = {omega0:.0f} rad/s ({omega0*60/(2*math.pi):.0f} rpm) 기준. 슬라이더를 움직이면 즉시 갱신됩니다.</sub>
+<sub>🔺/🔻 = 직전 대비 증감 · ω₀={omega0:.0f} rad/s 기준</sub>
 """
     new_prev = dict(m=s.m, l=s.l, I3=s.I3, I1=s.I1, wc=s.omega_crit, t=s.t_pred)
     return md, new_prev
 
 
 # ---------------------------------------------------------------------------
-# 발사: 시뮬레이션 실행 → 그래프/3D/요약
+# 시뮬레이션 실행 → 그래프/3D/요약
 # ---------------------------------------------------------------------------
 def launch(preset_key, AR, mass_g, cm_low, f_rim, mu, a_mm, omega0, theta0_deg,
            precise, steady, whip_count, whip_delta):
@@ -113,7 +111,7 @@ def launch(preset_key, AR, mass_g, cm_low, f_rim, mu, a_mm, omega0, theta0_deg,
                    precise_friction=precise, gamma=PIVOT_GAMMA)
 
     ts_fig = plots.time_series_figure(res, preset_key)
-    d3_fig = plots.top_3d_figure(model, res, preset_key)
+    gif_path = make_top_gif(model, res, preset_key)   # 자동 재생 GIF
 
     status = "쓰러짐 ✅" if res.fell else f"{SIM_TMAX:.0f}s 동안 직립 유지"
     cross = f"{res.t_cross_crit:.2f} s" if res.t_cross_crit is not None else "—"
@@ -125,7 +123,7 @@ def launch(preset_key, AR, mass_g, cm_low, f_rim, mu, a_mm, omega0, theta0_deg,
 - 구동: **{'채찍(재가속)' if drive=='whip' else '줄(단발 고속)' if drive=='string' else '채찍+줄'}**
   {f'· 채찍질 {wc}회 (+{whip_delta:.0f} rad/s/회)' if wc>0 else ''}
 """
-    return ts_fig, d3_fig, summary
+    return ts_fig, gif_path, summary
 
 
 # ---------------------------------------------------------------------------
@@ -189,7 +187,7 @@ def preset_updates(preset_key):
     return (
         upd(pr.AR), upd(pr.mass_g), upd(pr.cm_low), upd(pr.f_rim),
         upd(pr.mu), upd(pr.a_mm), upd(pr.omega0),
-        f"**구동 방식:** {drive_label}\n\n{pr.description_ko}",
+        f"**구동:** {drive_label}",
         gr.update(visible=whip_visible),
         gr.update(visible=whip_visible),
     )
@@ -217,42 +215,46 @@ def build_app():
                     value="korean", label="팽이 종류 (탭에 따라 구조 변수 범위가 제한됩니다)")
 
                 with gr.Row():
-                    # ----- 좌: 사이드바(구조 변수) -----
-                    with gr.Column(scale=3):
-                        gr.Markdown("### 구조 변수 (Structure)")
-                        kr = PRESETS["korean"]
-                        AR = gr.Slider(kr.AR.lo, kr.AR.hi, kr.AR.default, step=0.05,
-                                       label="종횡비 AR = 폭/높이  (↑납작/편구, ↓길쭉/편장 → I₃ 변화)")
-                        mass_g = gr.Slider(kr.mass_g.lo, kr.mass_g.hi, kr.mass_g.default, step=1,
-                                           label="총 질량 m [g]  (→ m, 마찰 수직항력)")
-                        cm_low = gr.Slider(kr.cm_low.lo, kr.cm_low.hi, kr.cm_low.default, step=0.02,
-                                           label="무게중심 하강(쇠심) cm_low  (↑ → l↓)")
-                        f_rim = gr.Slider(kr.f_rim.lo, kr.f_rim.hi, kr.f_rim.default, step=0.02,
-                                          label="테두리 질량비 f_rim  (↑ → I₃↑, m·l 거의 불변)")
-                        mu = gr.Slider(kr.mu.lo, kr.mu.hi, kr.mu.default, step=0.01,
-                                       label="팁 마찰계수 μ  (↑ → 지속시간↓)")
-                        a_mm = gr.Slider(kr.a_mm.lo, kr.a_mm.hi, kr.a_mm.default, step=0.1,
-                                         label="팁 곡률반경 a [mm]  (마찰토크 팔길이)")
-                        gr.Markdown("### 구동·초기조건 (Drive)")
-                        omega0 = gr.Slider(kr.omega0.lo, kr.omega0.hi, kr.omega0.default, step=5,
-                                           label="초기 스핀 ω₀ [rad/s]")
-                        theta0 = gr.Slider(1, 15, 5, step=0.5, label="초기 기울임각 θ₀ [deg]")
-                        whip_count = gr.Slider(0, 6, 2, step=1, label="채찍질 횟수 (재가속)")
-                        whip_delta = gr.Slider(20, 200, 80, step=10, label="채찍질 펄스 [rad/s/회]")
-                        with gr.Row():
-                            precise = gr.Checkbox(True, label="정밀 마찰 (2/3)μmga·cosθ")
-                            steady = gr.Checkbox(True, label="초기 정상세차 φ̇₀")
-                        drive_info = gr.Markdown(f"**구동 방식:** 채찍(반복 재가속)\n\n{kr.description_ko}")
-                        launch_btn = gr.Button("🚀 발사 (Launch)", variant="primary", size="lg")
-
-                    # ----- 중: 3D + 결과 -----
+                    # ===== 좌: 구조 변수 + 파생 물리량 =====
                     with gr.Column(scale=5):
-                        d3 = gr.Plot(label="3D 팽이 (자전+세차+장동) — ▶재생")
-                        summary = gr.Markdown("발사하면 결과가 표시됩니다.")
+                        with gr.Row():
+                            # 구조/구동 변수
+                            with gr.Column(scale=1):
+                                gr.Markdown("### 구조 변수")
+                                kr = PRESETS["korean"]
+                                AR = gr.Slider(kr.AR.lo, kr.AR.hi, kr.AR.default, step=0.05,
+                                               label="종횡비 AR", info="폭/높이 · 클수록 납작(편구)")
+                                mass_g = gr.Slider(kr.mass_g.lo, kr.mass_g.hi, kr.mass_g.default, step=1,
+                                                   label="질량 (g)")
+                                cm_low = gr.Slider(kr.cm_low.lo, kr.cm_low.hi, kr.cm_low.default, step=0.02,
+                                                   label="무게중심 낮춤", info="쇠심 효과 · 클수록 l↓")
+                                f_rim = gr.Slider(kr.f_rim.lo, kr.f_rim.hi, kr.f_rim.default, step=0.02,
+                                                  label="테두리 질량 f_rim", info="클수록 I₃↑ (안정↑)")
+                                mu = gr.Slider(kr.mu.lo, kr.mu.hi, kr.mu.default, step=0.01,
+                                               label="마찰 μ", info="작을수록 오래 돔")
+                                a_mm = gr.Slider(kr.a_mm.lo, kr.a_mm.hi, kr.a_mm.default, step=0.1,
+                                                 label="팁 곡률 a (mm)")
+                                gr.Markdown("### 구동·초기조건")
+                                omega0 = gr.Slider(kr.omega0.lo, kr.omega0.hi, kr.omega0.default, step=5,
+                                                   label="초기 스핀 ω₀ (rad/s)")
+                                theta0 = gr.Slider(1, 15, 5, step=0.5, label="초기 기울기 θ₀ (°)")
+                                whip_count = gr.Slider(0, 6, 2, step=1, label="채찍질 횟수")
+                                whip_delta = gr.Slider(20, 200, 80, step=10, label="채찍 세기 (rad/s)")
+                                with gr.Row():
+                                    precise = gr.Checkbox(True, label="정밀 마찰")
+                                    steady = gr.Checkbox(True, label="정상세차 시작")
+                                drive_info = gr.Markdown(f"**구동:** 채찍(반복 재가속)")
+                                run_btn = gr.Button("▶ 시뮬레이션 실행", variant="primary", size="lg")
+                            # 파생 물리량 패널
+                            with gr.Column(scale=1):
+                                gr.Markdown("### 파생 물리량 (구조 → 물리)")
+                                panel = gr.Markdown()
 
-                    # ----- 우: 물리 패널 + 그래프 -----
-                    with gr.Column(scale=4):
-                        panel = gr.Markdown()
+                    # ===== 우: 회전 애니메이션 + 그래프 + 결과 =====
+                    with gr.Column(scale=5):
+                        d3 = gr.Image(label="🌀 팽이 회전 (초기 → 쓰러짐, 자동재생)",
+                                      type="filepath", height=340)
+                        summary = gr.Markdown("왼쪽에서 변수를 조절하고 **시뮬레이션 실행**을 누르세요.")
                         charts = gr.Plot(label="θ(t) / ω(t) / Ω(t)")
 
                 with gr.Accordion("📊 비교 모드 · 검증 모드", open=False):
@@ -271,7 +273,7 @@ def build_app():
                     return panel_markdown(preset_key, AR, mass_g, cm_low, f_rim, mu,
                                           a_mm, omega0, precise, prev)
 
-                # 슬라이더 변경 → 패널 즉시 갱신(발사 전에도)
+                # 슬라이더 변경 → 패널 즉시 갱신(실행 전에도)
                 for comp in [AR, mass_g, cm_low, f_rim, mu, a_mm, omega0, precise]:
                     comp.change(_panel, inputs=struct_inputs + [prev_state],
                                 outputs=[panel, prev_state])
@@ -283,7 +285,7 @@ def build_app():
                     _panel, inputs=struct_inputs + [prev_state],
                     outputs=[panel, prev_state])
 
-                launch_btn.click(
+                run_btn.click(
                     launch,
                     inputs=[preset, AR, mass_g, cm_low, f_rim, mu, a_mm, omega0, theta0,
                             precise, steady, whip_count, whip_delta],

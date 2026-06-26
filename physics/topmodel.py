@@ -65,11 +65,19 @@ class TopModel:
     rim_z: float = 0.0
 
 
-def _spheroid_profile(H: float, R_max: float, z: np.ndarray) -> np.ndarray:
-    """팁(z=0)과 꼭대기(z=H)에서 0, 중앙(z=H/2)에서 R_max 인 회전타원체 반경."""
-    s = (z - H / 2.0) / (H / 2.0)          # -1..1
-    inside = np.clip(1.0 - s * s, 0.0, None)
-    return R_max * np.sqrt(inside)
+def _top_profile(H: float, R_max: float, z: np.ndarray) -> np.ndarray:
+    """팽이 실루엣 반경 R(z).
+
+    아래(z=0)는 뾰족한 팁, 하부에서 빠르게 벌어져 최대 반경(belly)을 이루고,
+    위로 갈수록 좁아지는 전형적인 팽이/말뚝 모양. 종횡비 AR 은 호출부에서 H, R_max
+    비율로 이미 반영되므로(편장↔편구), 여기서는 정규화된 실루엣만 만든다.
+    """
+    s = np.clip(z / H, 0.0, 1.0)
+    # 팽이 실루엣: 아래(s=0) 뾰족한 팁 → 위로 갈수록 굵어져 상부(belly)가 가장 넓고
+    # 맨 위는 짧게 좁아지는 작은 꼭지(stem). belly 가 위쪽(s≈0.78)에 오도록.
+    g = np.power(s, 0.62) * np.power(1.0 - s, 0.16)
+    gmax = g.max() if g.size else 1.0
+    return R_max * (g / gmax if gmax > 0 else g)
 
 
 def build_top(p: StructureParams) -> TopModel:
@@ -87,7 +95,7 @@ def build_top(p: StructureParams) -> TopModel:
     # --- 원판 이산화 --------------------------------------------------
     dz = H / N_DISKS
     z = (np.arange(N_DISKS) + 0.5) * dz    # 원판 중심
-    R = _spheroid_profile(H, R_max, z)
+    R = _top_profile(H, R_max, z)
 
     # --- 밀도: 하부 가중(쇠심)으로 무게중심 하강, 이후 목표 질량에 맞춰 스케일 ---
     k = p.cm_low * CM_BIAS_MAX

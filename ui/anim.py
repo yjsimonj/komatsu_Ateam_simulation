@@ -132,11 +132,14 @@ def make_top_gif(model: TopModel, res: SimResult, theme_key: str = "hybrid") -> 
         i = idx[frame_k]
         R = _euler_zxz(res.phi[i], res.theta[i], psi_vis[i])
 
-        # 바닥 면(z=0 평면) — 팽이가 서 있는 지면
-        fx, fy = np.meshgrid([-lim, lim], [-lim, lim])
+        # 바닥 면(z=0 평면) — 팽이가 서 있는 지면.
+        # plot_surface 는 면 전체를 평균 깊이로 정렬하므로 큰 평면 하나면
+        # 팽이를 가린다. 잘게 나눈 격자로 그려 타일별 깊이정렬이 되게 한다.
+        fg = np.linspace(-lim, lim, 24)
+        fx, fy = np.meshgrid(fg, fg)
         ax.plot_surface(fx, fy, np.zeros_like(fx), color="#e8e8e8",
-                        alpha=0.35, linewidth=0, antialiased=False,
-                        zorder=0, shade=False)
+                        alpha=0.5, linewidth=0, antialiased=False,
+                        shade=False, rcount=24, ccount=24)
 
         rot = (R @ flat).reshape(3, *shape)
         ax.plot_surface(rot[0], rot[1], rot[2], facecolors=facecol,

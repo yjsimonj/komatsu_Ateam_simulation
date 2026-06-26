@@ -39,7 +39,10 @@ def time_series_figure(res: SimResult, theme_key: str = "hybrid") -> go.Figure:
     # θ(t)
     fig.add_trace(go.Scatter(x=t, y=np.degrees(res.theta), name="θ",
                              line=dict(color=th["accent"], width=3)), row=1, col=1)
-    fig.add_hline(y=90, line_dash="dot", line_color="red", row=1, col=1)
+    theta_fall_deg = math.degrees(res.theta_fall)
+    fig.add_hline(y=theta_fall_deg, line_dash="dot", line_color="red",
+                  annotation_text=f"몸체 접지 θ_쓰러짐={theta_fall_deg:.0f}°",
+                  annotation_position="bottom right", row=1, col=1)
 
     # ω(t) + ω_임계 가로선
     fig.add_trace(go.Scatter(x=t, y=res.omega3, name="ω₃",

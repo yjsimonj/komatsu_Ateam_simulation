@@ -11,7 +11,7 @@ from __future__ import annotations
 import math
 import gradio as gr
 
-from physics.topmodel import StructureParams
+from physics.topmodel import StructureParams, fall_angle
 from physics.mapping import compute_physics
 from physics.integrator import InitialConditions, simulate
 from physics import constants as C
@@ -108,7 +108,8 @@ def launch(preset_key, AR, mass_g, cm_low, f_rim, mu, a_mm, omega0, theta0_deg,
                            whip_count=wc, whip_delta=whip_delta)
     res = simulate(inr, model.mu, model.a, model.b, model.c, ic,
                    dt=SIM_DT, t_max=SIM_TMAX, sample_dt=SIM_SAMPLE_DT,
-                   precise_friction=precise, gamma=PIVOT_GAMMA)
+                   precise_friction=precise, gamma=PIVOT_GAMMA,
+                   theta_fall=fall_angle(model))
 
     ts_fig = plots.time_series_figure(res, preset_key)
     gif_path = make_top_gif(model, res, preset_key)   # 자동 재생 GIF
@@ -135,17 +136,12 @@ def compare_defaults():
         p = StructureParams(AR=pr.AR.default, mass_g=pr.mass_g.default,
                             cm_low=pr.cm_low.default, f_rim=pr.f_rim.default,
                             a_mm=pr.a_mm.default, mu=pr.mu.default, material=pr.material)
-        _, inr, _ = compute_physics(p, pr.omega0.default)
+        model, inr, _ = compute_physics(p, pr.omega0.default)
         ic = InitialConditions(omega0=pr.omega0.default, theta0=math.radians(5))
-        res = simulate(inr, p.mu, inr_a(p), 0, 0, ic, dt=SIM_DT, t_max=SIM_TMAX,
-                       sample_dt=0.1, gamma=PIVOT_GAMMA)
+        res = simulate(inr, p.mu, model.a, 0, 0, ic, dt=SIM_DT, t_max=SIM_TMAX,
+                       sample_dt=0.1, gamma=PIVOT_GAMMA, theta_fall=fall_angle(model))
         durations[key] = res.duration
     return plots.comparison_bar(durations)
-
-
-def inr_a(p: StructureParams):
-    from physics.topmodel import build_top
-    return build_top(p).a
 
 
 def verify_mode():
@@ -159,7 +155,7 @@ def verify_mode():
     for f in [0.1, 0.3, 0.5, 0.7, 0.85]:
         m = build_top(StructureParams(f_rim=f, **base)); inr = compute_inertia(m)
         res = simulate(inr, m.mu, m.a, 0, 0, InitialConditions(omega0=300, theta0=math.radians(4)),
-                       dt=SIM_DT, t_max=200, sample_dt=0.2)
+                       dt=SIM_DT, t_max=200, sample_dt=0.2, theta_fall=fall_angle(m))
         I3s.append(inr.I3 * 1e7); d1.append(res.duration)
     fig1 = plots.trend_figure(I3s, d1, "I₃ [g·cm²]", "t_지속 ∝ I₃")
 
@@ -168,7 +164,7 @@ def verify_mode():
     inv, d2 = [], []
     for mu in [0.10, 0.14, 0.20, 0.28, 0.40]:
         res = simulate(inr0, mu, m0.a, 0, 0, InitialConditions(omega0=300, theta0=math.radians(4)),
-                       dt=SIM_DT, t_max=250, sample_dt=0.2)
+                       dt=SIM_DT, t_max=250, sample_dt=0.2, theta_fall=fall_angle(m0))
         inv.append(1.0 / mu); d2.append(res.duration)
     fig2 = plots.trend_figure(inv, d2, "1/μ", "t_지속 ∝ 1/μ")
     return fig1, fig2

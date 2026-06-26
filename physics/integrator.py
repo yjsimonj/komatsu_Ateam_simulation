@@ -41,6 +41,7 @@ class SimResult:
     fell: bool                    # 시뮬 종료 전 쓰러졌는가
     omega_crit: float             # 임계 각속도 [rad/s]
     t_cross_crit: Optional[float] # ω 가 ω_임계 를 가로지른 시각
+    theta_fall: float = C.THETA_FALL  # 쓰러짐 판정 각도 [rad] (몸체 접지각)
 
 
 _NS = 6  # 상태 차원 [θ, θ̇, φ, ψ, ω₃, p_φ]
@@ -178,4 +179,5 @@ def simulate(inertia, mu: float, a: float, b: float, c: float,
         phi=np.array(phis), psi=np.array(psis), phi_dot=np.array(pdots),
         energy=np.array(energies), duration=duration, upright_time=upright_time,
         fell=fell, omega_crit=omega_crit, t_cross_crit=t_cross_crit,
+        theta_fall=theta_fall,
     )

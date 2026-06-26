@@ -129,6 +129,30 @@ def build_top(p: StructureParams) -> TopModel:
     )
 
 
+def fall_angle(model: TopModel) -> float:
+    """팽이 몸체의 '가장 바깥 면'이 바닥에 처음 닿는 기울임각 θ_fall [rad].
+
+    팁(피벗)을 원점, 대칭축에서 반경 r·축높이 z 인 표면점은 기울임각 θ 에서
+    다운힐 쪽 바닥높이가  z·cosθ − r·sinθ.  이 값이 0 이 되는
+        θ = atan(z / r)
+    에서 그 점이 바닥(피벗면)에 닿는다. 팽이가 기울 때 실제로 바닥을 처음
+    때리는 곳은 가장 바깥쪽(최대 반경 belly)이므로 r=R_max 인 점을 기준으로
+    한다. 뾰족한 팁 부근의 얇은 살(R→0)은 z/r→0 이라 비현실적으로 작은 각을
+    주므로 접지 기준에서 제외한다(피벗은 팁 한 점으로 본다). 외곽 테두리
+    후프가 있으면 그쪽이 먼저 닿을 수 있어 함께 비교한다.
+    """
+    R_max = float(model.R_max)
+    if R_max <= 0:
+        return math.pi / 2.0
+    # 최대 반경(belly) 위치
+    i_belly = int(np.argmax(model.R))
+    theta = math.atan(float(model.z[i_belly]) / R_max)
+    # 테두리 후프(반경 = R_max)도 후보
+    if model.rim_mass > 0 and model.rim_radius > 1e-9:
+        theta = min(theta, math.atan(model.rim_z / model.rim_radius))
+    return theta
+
+
 def build_uniform_disk(R: float, thickness: float, mass: float, n: int = 400) -> TopModel:
     """검증용: 균일 원판 (오라클 §7.1)."""
     dz = thickness / n

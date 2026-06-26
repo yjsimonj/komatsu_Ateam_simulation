@@ -132,6 +132,12 @@ def make_top_gif(model: TopModel, res: SimResult, theme_key: str = "hybrid") -> 
         i = idx[frame_k]
         R = _euler_zxz(res.phi[i], res.theta[i], psi_vis[i])
 
+        # 바닥 면(z=0 평면) — 팽이가 서 있는 지면
+        fx, fy = np.meshgrid([-lim, lim], [-lim, lim])
+        ax.plot_surface(fx, fy, np.zeros_like(fx), color="#e8e8e8",
+                        alpha=0.35, linewidth=0, antialiased=False,
+                        zorder=0, shade=False)
+
         rot = (R @ flat).reshape(3, *shape)
         ax.plot_surface(rot[0], rot[1], rot[2], facecolors=facecol,
                         linewidth=0, antialiased=True, shade=True,

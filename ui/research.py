@@ -45,9 +45,9 @@ RESEARCH_KO = r"""
 
 **인과구조 다이어그램**
 
-$$\boxed{\text{구조(형태)}} \;\longrightarrow\; \boxed{\text{물리량}}\;\longrightarrow\; \boxed{\text{회전 안정성}}$$
-
-$$\text{종횡비·질량분포·무게중심·팁} \to I_3,\,I_1,\,l,\,\mu \to \text{지속시간·}\omega_{crit}\text{·세차·}\theta(t)$$
+> **구조(형태)** ⟶ **물리량** ⟶ **회전 안정성**
+>
+> 종횡비·질량분포·무게중심·팁 ⟶ $I_3,\ I_1,\ l,\ \mu$ ⟶ 지속시간·$\omega_{crit}$·세차·$\theta(t)$
 
 ## 3. 팽이 비교
 | 항목 | 한국 전통 팽이 | 일본 베이고마/코마 |
@@ -77,14 +77,15 @@ $\omega < \omega_{crit}$ 가 되면 $\theta$ 가 급증하며 쓰러집니다.
 $$\Omega = \frac{m\,g\,l}{I_3\,\omega}$$
 자전이 느려질수록 세차가 빨라집니다 ($\Omega \propto 1/\omega$).
 
-**(4) 마찰 토크 (자전 감쇠의 주원인)**
-$$\tau_{fric} = -\tfrac{2}{3}\,\mu\,m\,g\,a\,\cos\theta \quad(\text{정밀형}),\qquad \tau_{fric}\approx -\mu\,m\,g\,a \quad(\text{단순형})$$
+**(4) 마찰 토크 (자전 감쇠의 주원인)** — 정밀형 / 단순형
+$$\tau_{fric} = -\tfrac{2}{3}\,\mu\,m\,g\,a\,\cos\theta \qquad \tau_{fric}\approx -\mu\,m\,g\,a$$
 
 **(5) 공기저항 토크** $\;\tau_{visc} = -b\,\omega_3,\quad \tau_{turb} = -c\,\omega_3^2$
 
-**(6) 자전 감쇠 & 지속시간 (사전실험 핵심)**
-$$I_3\frac{d\omega}{dt} = -\mu\,m\,g\,a \;\Rightarrow\; \omega(t)=\omega_0 - \frac{\mu m g a}{I_3}t \;\Rightarrow\; t_{지속}\approx \frac{I_3\,\omega_0}{\mu\,m\,g\,a}$$
-$$\Rightarrow\quad t_{지속}\propto I_3 \ (\text{양의 선형}),\qquad t_{지속}\propto \frac{1}{\mu}\ (\text{반비례})$$
+**(6) 자전 감쇠 & 지속시간 (사전실험 핵심)** — 지속시간 $t_{life}$
+$$I_3\frac{d\omega}{dt} = -\mu\,m\,g\,a \;\Rightarrow\; \omega(t)=\omega_0 - \frac{\mu m g a}{I_3}t \;\Rightarrow\; t_{life}\approx \frac{I_3\,\omega_0}{\mu\,m\,g\,a}$$
+
+⟹ $t_{life}\propto I_3$ (양의 선형), $\;t_{life}\propto 1/\mu$ (반비례)
 
 **(7) 관성모멘트 & 평행축 정리** $\;I=\int r^2\,dm,\quad I_1 = I_{1,cm} + m\,l^2$
 

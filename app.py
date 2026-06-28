@@ -211,9 +211,9 @@ def _build_concept_tab():
 # ===========================================================================
 def _build_gallery_tab():
     with gr.Tab("🖼️ Gallery"):
-        gr.Markdown(f"## Gallery\nPhotos and videos placed in the "
-                    f"`{gallery.GALLERY_DIR_NAME}/` folder (scanned recursively).")
-        status = gr.Markdown(gallery.status_md())
+        gr.Markdown("## Gallery\nA collection of photos and clips from our "
+                    "research process — not experimental data, just snapshots of "
+                    "how the work was done.")
         refresh = gr.Button("🔄 Refresh", size="sm")
 
         gr.Markdown("### Photos")
@@ -226,10 +226,10 @@ def _build_gallery_tab():
         player = gr.Video(value=None, label="player", height=360)
 
         def _refresh():
-            return (gallery.status_md(), gallery.gallery_value(),
+            return (gallery.gallery_value(),
                     gr.update(choices=gallery.video_choices(), value=None), None)
 
-        refresh.click(_refresh, outputs=[status, grid, vdrop, player])
+        refresh.click(_refresh, outputs=[grid, vdrop, player])
         vdrop.change(gallery.resolve_video, inputs=vdrop, outputs=player)
 
 

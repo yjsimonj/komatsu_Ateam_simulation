@@ -18,6 +18,7 @@ from physics import constants as C
 from presets import PRESETS
 from ui import plots
 from ui import concept
+from ui import gallery
 from ui.anim import make_top_gif
 from ui.research import RESEARCH
 
@@ -206,6 +207,37 @@ def _build_concept_tab():
 
 
 # ===========================================================================
+# Page 4 — Gallery: photos & videos dropped into the gallery/ folder
+# ===========================================================================
+def _build_gallery_tab():
+    with gr.Tab("🖼️ Gallery"):
+        gr.Markdown(f"## Gallery\nPhotos and videos placed in the "
+                    f"`{gallery.GALLERY_DIR_NAME}/` folder (scanned recursively).")
+        status = gr.Markdown(gallery.status_md())
+        refresh = gr.Button("🔄 Refresh", size="sm")
+
+        gr.Markdown("### Photos")
+        grid = gr.Gallery(value=gallery.gallery_value(), columns=4, height="auto",
+                          object_fit="contain", label="images", show_label=False)
+
+        gr.Markdown("### Videos")
+        vids = gallery.video_choices()
+        vdrop = gr.Dropdown(choices=vids, value=(vids[0][1] if vids else None),
+                            label="Pick a video to play")
+        player = gr.Video(value=(vids[0][1] if vids else None), label="player",
+                          height=360)
+
+        def _refresh():
+            vc = gallery.video_choices()
+            first = vc[0][1] if vc else None
+            return (gallery.status_md(), gallery.gallery_value(),
+                    gr.update(choices=vc, value=first), first)
+
+        refresh.click(_refresh, outputs=[status, grid, vdrop, player])
+        vdrop.change(lambda p: p, inputs=vdrop, outputs=player)
+
+
+# ===========================================================================
 # UI build
 # ===========================================================================
 def build_app():
@@ -309,6 +341,9 @@ def build_app():
             # ---------------- Page 3: Concept — laser/FFT spin measurement ----------------
             _build_concept_tab()
 
+            # ---------------- Page 4: Gallery — user photos & videos ----------------
+            _build_gallery_tab()
+
         gr.Markdown("---\n<sub>The physics engine integrates the Heavy Symmetric Top equations of "
                     "motion directly with RK4; moments of inertia come from a solid-of-revolution "
                     "integral. Conforms to PRD §6.1·§6.2 / validation §7.</sub>")
@@ -319,4 +354,5 @@ demo = build_app()
 
 if __name__ == "__main__":
     demo.launch(server_name="0.0.0.0", server_port=7860,
-                theme=gr.themes.Soft(primary_hue="amber"))
+                theme=gr.themes.Soft(primary_hue="amber"),
+                allowed_paths=[gallery.GALLERY_DIR, concept._REPO_ROOT])

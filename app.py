@@ -221,20 +221,16 @@ def _build_gallery_tab():
                           object_fit="contain", label="images", show_label=False)
 
         gr.Markdown("### Videos")
-        vids = gallery.video_choices()
-        vdrop = gr.Dropdown(choices=vids, value=(vids[0][1] if vids else None),
-                            label="Pick a video to play")
-        player = gr.Video(value=(vids[0][1] if vids else None), label="player",
-                          height=360)
+        vdrop = gr.Dropdown(choices=gallery.video_choices(), value=None,
+                            label="Pick a video to play (downloads on demand)")
+        player = gr.Video(value=None, label="player", height=360)
 
         def _refresh():
-            vc = gallery.video_choices()
-            first = vc[0][1] if vc else None
             return (gallery.status_md(), gallery.gallery_value(),
-                    gr.update(choices=vc, value=first), first)
+                    gr.update(choices=gallery.video_choices(), value=None), None)
 
         refresh.click(_refresh, outputs=[status, grid, vdrop, player])
-        vdrop.change(lambda p: p, inputs=vdrop, outputs=player)
+        vdrop.change(gallery.resolve_video, inputs=vdrop, outputs=player)
 
 
 # ===========================================================================

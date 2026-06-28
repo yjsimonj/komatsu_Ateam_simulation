@@ -169,5 +169,10 @@ In our rig the Arduino reading is **higher when it is darker** — so the value
 spikes up each time the black tape faces the beam. Watch below: as foil and tape
 sweep past the laser, the reading oscillates — one cycle per revolution. A
 **Fourier transform** of that signal peaks at the rotation frequency *f*,
-giving **ω = 2π·f**.
+giving **ω = 2π·f**. Because the top keeps slowing down, we use a **short-time
+FFT (STFT)** — many short windows — to track ω(t) over the whole spin.
+
+> ⚠️ Real-experiment caveat: our measurement was taken with the top held in
+> place, and the laser can't follow the top's precession well, so the numbers
+> are only approximate — we read trends, not exact values.
 """

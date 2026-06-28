@@ -64,6 +64,10 @@ RESEARCH_KO = r"""
 > ⚠️ 형태 변이가 크므로, 실제 표본의 $m,\,l,\,I_3,\,I_1,\,$팁형상을 직접 측정해 설계공간에
 > 점으로 비교합니다. "형태가 다르면 물리량도 다르다."
 
+**대표 종류** — 한국: **말팽이**(평평한 머리 → 원뿔 → 뾰족한 끝, 가장 잘·오래 도는 형) · **장구팽이**(양끝 뾰족) · **줄팽이**(허리 잘록, 끈으로 던짐) · **바가지팽이**(손으로 비빔). 일본: **나게고마**(투げごま, 끈으로 던져 단발 고속) · **베이고마**(ベーゴマ, 금속·안정) · **철테/싸움 코마**(鉄輪·喧嘩ごま, 바깥 쇠테로 $I_3$ 극대화) · **박다/곡예 코마**(博多·曲ごま, 가는 쇠심 목재, 회전 수명 매우 김) · **역립 코마**(逆立ちごま, 돌다 스스로 뒤집히는 **tippe top**, 세차·구름마찰과 직결).
+
+> 💡 한국에서 팽이가 오래 똑바로 도는 상태를 **"잠을 잔다"**고 부르는데, 이는 물리학의 **sleeping top**($\omega>\omega_{crit}$) 과 정확히 일치합니다.
+
 ## 4. 이론적 배경
 **(1) 자이로 안정화** — 정지 팽이는 불안정 평형이라 쓰러집니다. 빠르게 자전하면 각운동량
 $L = I_3\omega$ 가 생기고, 중력 토크 $\tau = mgl\sin\theta$ 가 $L$ 과 수직으로 작용해 $L$ 의 *방향*만
@@ -98,12 +102,12 @@ $$I_3\frac{d\omega}{dt} = -\mu\,m\,g\,a \;\Rightarrow\; \omega(t)=\omega_0 - \fr
 ## 5. 선행연구 분석
 | # | 선행연구 | 핵심 |
 | --- | --- | --- |
-| 1 | 문미옥(2012) | 한국팽이 구조 분석 |
-| 2 | 문미옥·이지예(2011) | 말팽이 편장(prolate) 구조 |
-| 3 | Kaaronen 외 (출처확인중) | 베이고마 동역학 |
-| 4 | 김세연 외(2012) | 세차 이론·실험 비교 방법론 |
-| 5 | Rod Cross(2013), AJP 81(4) | 팁/바닥 형상 → 세차·안정성 |
-| 6 | Spin-It(2014), SIGGRAPH | 내부 질량 재분배 최적화 |
+| 1 | 문미옥(2012), 유아교육연구 32(4), 445–464 | 한국 전통 팽이 구조: 나무 몸체+하부 쇠심, 축 중심 질량 |
+| 2 | 문미옥·이지예(2011), 유아교육연구 31(4), 361–379 | 말팽이 편장(prolate)·하부 질량 집중·채찍 지속가속 |
+| 3 | Kaaronen 외 (출처확인중) | 베이고마 동역학 — 저자·연도 확인 후 정식 기재 |
+| 4 | 김세연 외(2012), 제주과학고 | 세차 이론·실험 비교 방법론(초고속카메라·Logger Pro) |
+| 5 | Rod Cross(2013), *Am. J. Phys.* 81(4), 280–289, DOI 10.1119/1.4776195 | 팁/바닥 형상 → 세차·안정성, rising/tippe top |
+| 6 | Bächer·Whiting·Bickel·Sorkine-Hornung, *Spin-It* (ACM TOG 33(4), SIGGRAPH 2014) | 내부 질량 재분배로 관성모멘트 최적화 |
 
 > **선행연구 공백:** 한·일 팽이의 *정량 비교* + *하이브리드 검증* 을 함께 다룬 연구가 드뭅니다.
 > 본 연구는 이 공백을 시뮬레이션 + 실측으로 메웁니다.
@@ -131,6 +135,12 @@ $$I_3\frac{d\omega}{dt} = -\mu\,m\,g\,a \;\Rightarrow\; \omega(t)=\omega_0 - \fr
 - 예측: $t\propto I_3$ (선형), $t\propto 1/\mu$ (반비례).
 - 마찰계수 측정: 빗면법 $\mu=\tan\theta$ (블록=팁재질, 면=바닥재).
 - 가정·한계: 쿨롱 마찰 근사, 공기저항은 부차적.
+- **쓰러짐 정의:** 팽이를 놓은 순간부터 **팁을 제외한 밑면이 바닥에 닿기 시작한 순간**까지를 회전 지속시간으로 본다. (이 웹앱의 시뮬레이션도 동일하게, 대칭축이 수평이 되는 90°가 아니라 *몸체 바깥면이 바닥에 닿는 각*을 쓰러짐으로 판정합니다.)
+- **초기 각속도 통제:** 모터 + 3D펜으로 만든 '모터 꽂는 모자'로 같은 시간 돌린 뒤 수직으로 분리해 $\omega_0$ 를 일정하게 맞춤(고무줄·수동 감기 방식의 편차 극복).
+
+**각속도 측정 — 레이저 + 아두이노 + 푸리에 변환** (→ 세 번째 탭에서 원리를 애니메이션으로 확인)
+팽이 옆면을 **절반은 알루미늄 호일(밝음), 절반은 검은 절연테이프(어두움)**로 감고 회전시키며 **레이저**를 쏴, 반사광을 **광센서+아두이노**로 측정한다. 한 바퀴마다 밝음/어둠이 1회 반복되므로 신호 주파수 $f$ 가 곧 회전수이고, **(단시간) 푸리에 변환(STFT)**의 봉우리에서 $\omega = 2\pi f$ 를 얻는다. 분해능 $\Delta f = f_s/N$, 나이퀴스트 $f_s>2f_{max}$. 우리 장치에서는 센서값이 *어두울수록 높게* 나왔다.
+> ⚠️ 현재 한계: 팁 고정 측정이라 **세차운동을 레이저가 따라가지 못해 오차가 큼**. 2학기에 3D프린터·과학상자로 측정 리그를 정밀화하고 레이저 정렬·STFT로 개선 예정. 현재는 **경향성**만 해석.
 
 ## 8. 실제 실험·시뮬레이션
 3단계 통합: 반응표면 → 보정지도 → 하이브리드 역설계·검증.
@@ -183,10 +193,20 @@ $\theta$ grows rapidly and the top falls.
 ## 3. Korean vs Japanese
 Korean: wooden, **prolate** (tall), axis-concentrated mass (small $I_3$), higher friction, whip-driven.
 Japanese: metal, **oblate** (flat/wide), rim-concentrated mass (large $I_3$), low friction, string-driven.
+A long upright spin is called *"sleeping"* in Korean — exactly the physics term ($\omega>\omega_{crit}$).
+Japanese koma range from *beigoma* (metal) to the self-inverting *tippe top* (逆立ちごま).
+
+## Measuring ω — laser + Arduino + FFT
+Half of the top is wrapped in **aluminium foil** (bright) and half in **black tape** (dark); a **laser**
+hits the edge while it spins and a **light-sensor + Arduino** record the reflected light (one cycle per
+turn). A **short-time Fourier transform** of that signal peaks at the rotation frequency $f$, giving
+$\omega=2\pi f$. *Fall* is defined as the moment the body (not the tip) first touches the floor — the
+simulation uses the same criterion. See the **"How we measured ω" page** for an animated explanation.
 
 ## 5–10 Prior work, design, pre-experiment, simulation, schedule, outro
-Prior work: Moon (2012), Moon & Lee (2011), Kaaronen et al., Kim et al. (2012),
-Rod Cross (2013, AJP 81(4)), Spin-It (SIGGRAPH 2014). Gap: few studies *quantitatively compare*
+Prior work: Moon (2012, *J. Early Childhood Educ.* 32(4)), Moon & Lee (2011, 31(4)), Kaaronen et al.,
+Kim et al. (2012), Rod Cross (2013, *Am. J. Phys.* 81(4), DOI 10.1119/1.4776195),
+Bächer et al. *Spin-It* (ACM TOG 33(4), SIGGRAPH 2014). Gap: few studies *quantitatively compare*
 Korea/Japan **and** validate a hybrid. We fill it with simulation + measurement.
 **Try the Simulation page to manipulate the structure variables yourself.**
 """

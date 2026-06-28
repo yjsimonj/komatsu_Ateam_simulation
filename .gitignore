@@ -6,3 +6,7 @@ __pycache__/
 .venv/
 venv/
 .DS_Store
+
+# Media lives in a separate HF Dataset (see ui/gallery.py DATASET_REPO).
+# The local gallery/ folder is just a working copy of that dataset.
+gallery/

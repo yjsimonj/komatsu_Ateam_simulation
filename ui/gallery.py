@@ -18,8 +18,8 @@ from __future__ import annotations
 
 import os
 
-# >>> Set this to your Hugging Face Dataset repo id <<<
-DATASET_REPO = "yjsimonj/komatsu-media"
+# >>> Hugging Face Dataset repo id holding the media <<<
+DATASET_REPO = "yjsimonj/gallery"
 
 # Local fallback folder (used only when the dataset is unreachable).
 GALLERY_DIR_NAME = "gallery"

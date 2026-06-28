@@ -112,6 +112,18 @@ def resolve_video(value: str | None) -> str | None:
     return value
 
 
+def allowed_media_paths() -> list[str]:
+    """Folders Gradio must be allowed to serve files from: the local gallery
+    folder and the huggingface_hub download cache (where videos/images land)."""
+    paths = [GALLERY_DIR]
+    try:
+        from huggingface_hub import constants
+        paths.append(constants.HF_HUB_CACHE)
+    except Exception:
+        paths.append(os.path.expanduser("~/.cache/huggingface/hub"))
+    return [p for p in paths if p]
+
+
 def status_md() -> str:
     files = _remote_files()
     if files is not None:

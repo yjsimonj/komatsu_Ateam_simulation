@@ -351,4 +351,4 @@ demo = build_app()
 if __name__ == "__main__":
     demo.launch(server_name="0.0.0.0", server_port=7860,
                 theme=gr.themes.Soft(primary_hue="amber"),
-                allowed_paths=[gallery.GALLERY_DIR, concept._REPO_ROOT])
+                allowed_paths=[concept._REPO_ROOT] + gallery.allowed_media_paths())

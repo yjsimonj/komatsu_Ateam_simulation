@@ -185,37 +185,24 @@ def preset_updates(preset_key):
 # ===========================================================================
 def _build_concept_tab():
     with gr.Tab("🔦 How we measured ω (laser + FFT)"):
-        gr.Markdown("## Measuring the spin rate ω with a laser and a Fourier transform\n"
-                    "This page explains the **measurement method** from our real experiment — "
-                    "it is a concept walkthrough, not a parametric simulation. Use **Prev / Next** "
-                    "to step through the idea.")
+        gr.Markdown("## Measuring the spin rate ω with a laser and a Fourier transform")
+        gr.Markdown(concept.INTRO_MD)
         with gr.Row():
-            # Left: stepper text + photo of the real setup
+            # Left: the real rig photo
             with gr.Column(scale=1):
-                step_state = gr.State(0)
-                step_box = gr.Markdown(concept.step_md(0))
-                with gr.Row():
-                    prev_b = gr.Button("◀ Prev")
-                    next_b = gr.Button("Next ▶", variant="primary")
-                gr.Markdown("#### Real experiment photo")
-                photo = gr.Image(value=concept.PHOTO_PATH, type="filepath",
-                                 label="half foil / half black tape, laser + light sensor + Arduino",
-                                 height=300, interactive=False)
+                gr.Markdown("#### Real experiment rig")
+                gr.Image(value=concept.PHOTO_PATH, type="filepath",
+                         label="half foil / half black tape · laser · light sensor · Arduino",
+                         height=340, interactive=False)
                 if concept.PHOTO_PATH is None:
-                    gr.Markdown("<sub>📷 Place the photo at `assets/experiment_setup.jpg` "
-                                "to show it here.</sub>")
-            # Right: schematic + signal + FFT
+                    gr.Markdown("<sub>📷 Place the photo at `assets/experiment_setup.jpg`.</sub>")
+            # Right: live animation (top spins, laser hits, signal draws in)
             with gr.Column(scale=1):
-                gr.Plot(concept.setup_diagram())
-                gr.Plot(concept.illuminance_figure())
+                gr.Markdown("#### Live idea — the top spins and the laser reads it")
+                gr.Image(value=concept.make_concept_gif(), type="filepath",
+                         label="spinning top + laser → live illuminance", height=200,
+                         interactive=False)
                 gr.Plot(concept.fft_figure())
-
-        def _step(cur, delta):
-            nxt = max(0, min(cur + delta, len(concept.STEPS) - 1))
-            return nxt, concept.step_md(nxt)
-
-        prev_b.click(lambda c: _step(c, -1), inputs=step_state, outputs=[step_state, step_box])
-        next_b.click(lambda c: _step(c, +1), inputs=step_state, outputs=[step_state, step_box])
 
 
 # ===========================================================================

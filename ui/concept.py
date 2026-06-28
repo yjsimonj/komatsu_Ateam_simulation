@@ -1,27 +1,31 @@
-"""Page 3 — Concept explanation: measuring spin rate with a laser + FFT.
+"""Page 3 — Concept: measuring spin rate with a laser + Fourier transform.
 
-This page is NOT a parametric simulation. It walks through HOW we measured a
-top's angular velocity in the real experiment:
+This page is NOT a parametric simulation — it is something you just watch. An
+animation shows the real idea live: half the top is wrapped in aluminium foil
+(bright reflection), the other half in black insulating tape (dark). While the
+top spins, a laser is aimed at its edge and a light sensor reads the reflected
+illuminance. Each revolution the sensor sees one bright + one dark half, so the
+signal oscillates once per turn. A Fourier transform of that signal peaks at the
+rotation frequency f, and the angular velocity is ω = 2π·f.
 
-  half the top is wrapped in black insulating tape (low reflectance), the other
-  half in aluminium foil (high reflectance). While the top spins, a laser is
-  aimed at the side and a light sensor reads the reflected illuminance. Each
-  revolution the sensor sees one bright half + one dark half, so the signal
-  oscillates once per turn. A (short-time) Fourier transform of that signal has
-  a peak at the rotation frequency f; the angular velocity is ω = 2π·f.
-
-The plots below are illustrative (synthetic) so the idea is visible even before
-the real measurement photo/CSV is dropped in. Replace PHOTO_PATH with the real
-experiment photo when available.
+The animated signal here is illustrative (synthetic). The real measurement was
+done with the top held in place, so its numbers aren't exact — we show the real
+rig only as a photo, and use the animation to convey the method.
 """
 
 from __future__ import annotations
 
 import math
 import os
+import tempfile
+
 import numpy as np
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from matplotlib import animation
+from matplotlib.patches import Wedge
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 
 # Real experiment photo (half foil / half black tape, laser + light sensor +
 # Arduino). Resolved relative to the repo root so it works on HF Spaces too.
@@ -32,55 +36,102 @@ PHOTO_PATH: str | None = _PHOTO_ABS if os.path.exists(_PHOTO_ABS) else None
 
 ACCENT = "#b5651d"
 FOIL = "#c9ccd1"
-TAPE = "#222222"
+TAPE = "#1c1c1c"
+LASER = "#e7000b"
+SENSOR = "#2e86c1"
+
+# Animation parameters
+_N_FRAMES = 72
+_FPS = 18
+_TURNS = 6.0          # how many revolutions across the whole clip
+_LASER_ANGLE = 0.0    # the laser hits the rightmost point of the top (angle 0)
 
 
-# ---------------------------------------------------------------------------
-# Synthetic illuminance signal (half foil / half black tape under a laser)
-# ---------------------------------------------------------------------------
-def _illuminance_signal(f0: float = 18.0, decay: float = 0.06,
-                        dur: float = 1.0, fs: int = 4000, seed: int = 0):
-    """Return (t, lux) for a top spinning at ~f0 Hz and slowly slowing down.
+def _brightness(phase: float) -> float:
+    """Reflected illuminance when the foil/tape boundary is at angle `phase`.
 
-    One bright (foil) + one dark (tape) half per revolution → the reflected
-    illuminance is a near-square wave at the rotation frequency f(t).
+    Foil covers [phase, phase+π); the laser hits angle 0. Bright while foil
+    faces the beam, dark otherwise — a near-square wave once per revolution.
     """
-    rng = np.random.default_rng(seed)
-    t = np.arange(int(dur * fs)) / fs
-    # instantaneous frequency drops slightly as the top slows (friction)
-    f_inst = f0 * (1.0 - decay * t)
-    phase = 2 * math.pi * np.cumsum(f_inst) / fs
-    # smoothed square wave: foil half bright, tape half dark
-    sq = np.tanh(3.0 * np.sin(phase))            # ∈[-1,1], soft edges
-    lux = 55.0 + 35.0 * sq                       # baseline + contrast [lux]
-    lux += rng.normal(0, 1.4, size=lux.shape)    # sensor noise
-    return t, lux, float(f_inst.mean())
+    rel = (_LASER_ANGLE - phase) % (2 * math.pi)
+    foil = rel < math.pi
+    return (0.92 if foil else 0.12)
 
 
-def illuminance_figure() -> go.Figure:
-    """Raw sensor trace: reflected illuminance vs time (shows the oscillation)."""
-    t, lux, _ = _illuminance_signal()
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=t * 1000, y=lux, mode="lines",
-                             line=dict(color=ACCENT, width=1.5), name="illuminance"))
-    fig.update_layout(
-        title="Sensor reading — reflected illuminance vs. time",
-        xaxis_title="time [ms]", yaxis_title="illuminance [lux]",
-        height=300, plot_bgcolor="white", font=dict(size=13),
-        margin=dict(l=60, r=20, t=46, b=44), showlegend=False)
-    fig.update_xaxes(range=[0, 220], gridcolor="#eee")
-    fig.update_yaxes(gridcolor="#eee")
-    return fig
+def make_concept_gif() -> str:
+    """Animated GIF: the top spins, the laser hits it, and the light sensor's
+    illuminance trace draws in live. Returns a temp file path."""
+    # phase of the foil/tape boundary over time (constant spin, slight slow-down)
+    k = np.arange(_N_FRAMES)
+    frac = k / (_N_FRAMES - 1)
+    phase = 2 * math.pi * _TURNS * (frac - 0.04 * frac * frac)   # gently slowing
+    rng = np.random.default_rng(0)
+    lux = np.array([_brightness(p) for p in phase]) * 60 + 25
+    lux = lux + rng.normal(0, 1.3, size=lux.shape)
+
+    fig = plt.figure(figsize=(7.4, 3.4), dpi=92)
+    ax_top = fig.add_axes([0.02, 0.06, 0.40, 0.88])   # spinning top + laser
+    ax_sig = fig.add_axes([0.50, 0.16, 0.47, 0.70])   # live illuminance trace
+    fig.patch.set_facecolor("white")
+
+    def draw(i: int):
+        ph = phase[i]
+        bright = _brightness(ph)
+
+        # ---- left: top-view of the spinning top + laser + sensor ----
+        ax_top.clear()
+        ax_top.set_xlim(-1.5, 2.6); ax_top.set_ylim(-1.7, 1.7)
+        ax_top.set_aspect("equal"); ax_top.axis("off")
+        deg = math.degrees(ph)
+        # foil half and tape half (rotating)
+        ax_top.add_patch(Wedge((0, 0), 1.0, deg, deg + 180, facecolor=FOIL, edgecolor="#999", lw=0.5))
+        ax_top.add_patch(Wedge((0, 0), 1.0, deg + 180, deg + 360, facecolor=TAPE, edgecolor="#999", lw=0.5))
+        # spin direction arrow
+        ax_top.annotate("", xy=(0.0, 1.28), xytext=(0.62, 1.28),
+                        arrowprops=dict(arrowstyle="->", color="#888", lw=1.6))
+        ax_top.text(0.18, 1.42, "ω", color="#555", fontsize=12)
+        # laser beam from the right hitting the rightmost point (1,0)
+        ax_top.plot([2.5, 1.0], [0, 0], color=LASER, lw=2.2, zorder=5)
+        ax_top.scatter([1.0], [0], s=70, color=LASER, zorder=6)
+        ax_top.text(2.0, 0.22, "laser", color=LASER, fontsize=10)
+        # reflected ray toward the sensor, brightness-coded
+        ax_top.plot([1.0, 1.9], [0, 1.25], color=SENSOR,
+                    lw=1.0 + 3.0 * bright, alpha=0.25 + 0.7 * bright, zorder=4)
+        ax_top.scatter([1.9], [1.25], s=80, marker="s", color=SENSOR, zorder=6)
+        ax_top.text(1.55, 1.42, "sensor", color=SENSOR, fontsize=10)
+        # little glow telling foil(bright) vs tape(dark) is facing the laser
+        ax_top.text(-1.45, -1.55, "foil → bright" if bright > 0.5 else "tape → dark",
+                    fontsize=10, color=("#a06a00" if bright > 0.5 else "#444"))
+
+        # ---- right: illuminance trace drawing in live ----
+        ax_sig.clear()
+        ax_sig.plot(k[:i + 1], lux[:i + 1], color=ACCENT, lw=1.8)
+        ax_sig.scatter([k[i]], [lux[i]], s=28, color=ACCENT, zorder=5)
+        ax_sig.set_xlim(0, _N_FRAMES - 1); ax_sig.set_ylim(10, 100)
+        ax_sig.set_title("light sensor — illuminance vs. time", fontsize=11)
+        ax_sig.set_xlabel("time", fontsize=10); ax_sig.set_ylabel("lux", fontsize=10)
+        ax_sig.set_xticks([]); ax_sig.grid(alpha=0.25)
+        ax_sig.text(0.02, 0.93, "one bright/dark cycle = one revolution",
+                    transform=ax_sig.transAxes, fontsize=9, color="#666")
+
+    anim = animation.FuncAnimation(fig, draw, frames=_N_FRAMES, interval=1000 / _FPS)
+    path = tempfile.NamedTemporaryFile(suffix=".gif", delete=False).name
+    anim.save(path, writer=animation.PillowWriter(fps=_FPS))
+    plt.close(fig)
+    return path
 
 
 def fft_figure() -> go.Figure:
-    """Magnitude spectrum of the illuminance signal — peak at rotation freq."""
-    t, lux, f_true = _illuminance_signal()
-    fs = 1.0 / (t[1] - t[0])
-    x = lux - lux.mean()
-    win = np.hanning(len(x))
-    spec = np.abs(np.fft.rfft(x * win))
-    freq = np.fft.rfftfreq(len(x), d=1.0 / fs)
+    """Illustrative magnitude spectrum: the peak gives the rotation frequency f,
+    and ω = 2π·f. (Synthetic, to show how the spin rate is extracted.)"""
+    fs, dur, f0 = 4000, 1.0, 18.0
+    t = np.arange(int(dur * fs)) / fs
+    rng = np.random.default_rng(0)
+    phase = 2 * math.pi * f0 * t
+    lux = 55 + 35 * np.tanh(3.0 * np.sin(phase)) + rng.normal(0, 1.4, size=t.shape)
+    x = (lux - lux.mean()) * np.hanning(len(lux))
+    spec = np.abs(np.fft.rfft(x))
+    freq = np.fft.rfftfreq(len(x), 1.0 / fs)
     band = freq <= 80
     freq, spec = freq[band], spec[band]
     f_peak = float(freq[np.argmax(spec)])
@@ -88,10 +139,10 @@ def fft_figure() -> go.Figure:
 
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=freq, y=spec, mode="lines",
-                             line=dict(color="#2e86c1", width=2), name="|FFT|"))
+                             line=dict(color=SENSOR, width=2)))
     fig.add_vline(x=f_peak, line_dash="dash", line_color="red",
                   annotation_text=f"f = {f_peak:.1f} Hz", annotation_position="top right")
-    fig.add_annotation(x=f_peak, y=spec.max(), xshift=70, yshift=-10, showarrow=False,
+    fig.add_annotation(x=f_peak, y=spec.max(), xshift=80, yshift=-8, showarrow=False,
                        text=f"ω = 2π·f ≈ {omega:.0f} rad/s", font=dict(color="red", size=13))
     fig.update_layout(
         title="Fourier transform — peak gives the rotation frequency",
@@ -103,76 +154,15 @@ def fft_figure() -> go.Figure:
     return fig
 
 
-def setup_diagram() -> go.Figure:
-    """Schematic top-view: laser → spinning half-foil/half-tape top → sensor."""
-    fig = go.Figure()
-    # top body (circle), split into a bright foil half and a dark tape half
-    ang = np.linspace(-math.pi / 2, math.pi / 2, 60)
-    fig.add_trace(go.Scatter(
-        x=np.concatenate([[0], np.cos(ang)]), y=np.concatenate([[0], np.sin(ang)]),
-        fill="toself", mode="lines", line=dict(color=FOIL),
-        fillcolor=FOIL, hoverinfo="skip", name="aluminium foil"))
-    fig.add_trace(go.Scatter(
-        x=np.concatenate([[0], np.cos(ang + math.pi)]),
-        y=np.concatenate([[0], np.sin(ang + math.pi)]),
-        fill="toself", mode="lines", line=dict(color=TAPE),
-        fillcolor=TAPE, hoverinfo="skip", name="black tape"))
-    fig.add_annotation(x=0.45, y=0.0, text="foil", showarrow=False, font=dict(size=12, color="#333"))
-    fig.add_annotation(x=-0.5, y=0.0, text="tape", showarrow=False, font=dict(size=12, color="white"))
-    # spin arrow
-    fig.add_annotation(x=0, y=1.18, ax=0.5, ay=1.18, xref="x", yref="y",
-                       axref="x", ayref="y", showarrow=True, arrowhead=3,
-                       arrowcolor="#888", text="")
-    fig.add_annotation(x=0.25, y=1.32, text="ω (spin)", showarrow=False, font=dict(size=12))
-    # laser in, sensor reading
-    fig.add_annotation(x=-1.0, y=0.0, ax=-2.1, ay=0.0, xref="x", yref="y",
-                       axref="x", ayref="y", showarrow=True, arrowhead=3,
-                       arrowcolor="red", text="")
-    fig.add_annotation(x=-2.15, y=0.18, text="laser", showarrow=False, font=dict(color="red", size=13))
-    fig.add_annotation(x=-1.55, y=0.95, ax=-1.0, ay=0.18, xref="x", yref="y",
-                       axref="x", ayref="y", showarrow=True, arrowhead=3,
-                       arrowcolor="#2e86c1", text="")
-    fig.add_annotation(x=-1.9, y=1.05, text="↗ light sensor", showarrow=False,
-                       font=dict(color="#2e86c1", size=13))
-    fig.update_xaxes(visible=False, range=[-2.6, 1.6], scaleanchor="y", scaleratio=1)
-    fig.update_yaxes(visible=False, range=[-1.4, 1.6])
-    fig.update_layout(title="Measurement setup (top view)", height=320,
-                      plot_bgcolor="white", margin=dict(l=10, r=10, t=46, b=10),
-                      showlegend=False, font=dict(size=13))
-    return fig
+INTRO_MD = """\
+A spinning top is too fast to read its rate by eye, so we make its reflection
+**blink once per turn** and count the blinks with light:
 
+- **half aluminium foil** (bright) + **half black insulating tape** (dark),
+- a **laser** aimed at the edge while it spins,
+- a **light sensor + Arduino** recording the reflected **illuminance**.
 
-# ---------------------------------------------------------------------------
-# Step-through explanation (Prev / Next)
-# ---------------------------------------------------------------------------
-STEPS = [
-    ("1 · The idea",
-     "We need the spin rate ω, but a spinning top is too fast to read directly. "
-     "**Trick:** make the top's reflection blink once per turn, then count the blinks "
-     "with light instead of with our eyes."),
-    ("2 · Half foil, half tape",
-     "We wrap **one half of the top in aluminium foil** (high reflectance, bright) and "
-     "**the other half in black insulating tape** (low reflectance, dark). "
-     "Now each full revolution shows the sensor exactly one bright half and one dark half."),
-    ("3 · Laser + light sensor + Arduino",
-     "While the top spins we aim a **laser** at its side and point a **light sensor** "
-     "at the reflection, logged by an **Arduino**. As foil and tape alternate past the "
-     "beam, the measured **illuminance oscillates** — one bright/dark cycle per revolution. "
-     "(See the real rig in the photo on the left.)"),
-    ("4 · The raw signal",
-     "The sensor trace is a near-**square wave**: high while the foil faces the laser, "
-     "low while the tape does. Its period **T** is one revolution, so the rotation "
-     "frequency is f = 1/T. But noise and a slowly changing T make it hard to read T by eye."),
-    ("5 · Fourier transform → ω",
-     "We take a **(short-time) Fourier transform** of the illuminance signal. "
-     "The spectrum has a clear **peak at the rotation frequency f**. "
-     "The angular velocity is then **ω = 2π·f**. "
-     "Doing this over short windows tracks how ω decays as the top slows down."),
-]
-
-
-def step_md(i: int) -> str:
-    i = max(0, min(i, len(STEPS) - 1))
-    title, body = STEPS[i]
-    dots = " ".join("●" if k == i else "○" for k in range(len(STEPS)))
-    return f"### {title}\n\n{body}\n\n<sub>{dots}  ({i+1}/{len(STEPS)})</sub>"
+Watch below: as the foil and tape sweep past the beam, the sensor reading
+oscillates — one bright/dark cycle per revolution. A **Fourier transform** of
+that signal peaks at the rotation frequency *f*, giving **ω = 2π·f**.
+"""

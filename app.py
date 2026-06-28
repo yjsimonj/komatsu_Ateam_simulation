@@ -199,11 +199,11 @@ def _build_concept_tab():
                     next_b = gr.Button("Next ▶", variant="primary")
                 gr.Markdown("#### Real experiment photo")
                 photo = gr.Image(value=concept.PHOTO_PATH, type="filepath",
-                                 label="half foil / half black tape, laser + light sensor",
-                                 height=260)
+                                 label="half foil / half black tape, laser + light sensor + Arduino",
+                                 height=300, interactive=False)
                 if concept.PHOTO_PATH is None:
-                    gr.Markdown("<sub>📷 Drop the real measurement photo into "
-                                "`ui/concept.py` (`PHOTO_PATH`) to show it here.</sub>")
+                    gr.Markdown("<sub>📷 Place the photo at `assets/experiment_setup.jpg` "
+                                "to show it here.</sub>")
             # Right: schematic + signal + FFT
             with gr.Column(scale=1):
                 gr.Plot(concept.setup_diagram())

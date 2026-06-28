@@ -18,13 +18,17 @@ experiment photo when available.
 from __future__ import annotations
 
 import math
+import os
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-# Drop the real experiment photo here (or pass a path into build). Until then a
-# placeholder is shown.
-PHOTO_PATH: str | None = None
+# Real experiment photo (half foil / half black tape, laser + light sensor +
+# Arduino). Resolved relative to the repo root so it works on HF Spaces too.
+_PHOTO_REL = "assets/experiment_setup.jpg"
+_REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_PHOTO_ABS = os.path.join(_REPO_ROOT, _PHOTO_REL)
+PHOTO_PATH: str | None = _PHOTO_ABS if os.path.exists(_PHOTO_ABS) else None
 
 ACCENT = "#b5651d"
 FOIL = "#c9ccd1"
@@ -150,10 +154,11 @@ STEPS = [
      "We wrap **one half of the top in aluminium foil** (high reflectance, bright) and "
      "**the other half in black insulating tape** (low reflectance, dark). "
      "Now each full revolution shows the sensor exactly one bright half and one dark half."),
-    ("3 · Laser + light sensor",
+    ("3 · Laser + light sensor + Arduino",
      "While the top spins we aim a **laser** at its side and point a **light sensor** "
-     "at the reflection. As foil and tape alternate past the beam, the measured "
-     "**illuminance oscillates** — one bright/dark cycle per revolution."),
+     "at the reflection, logged by an **Arduino**. As foil and tape alternate past the "
+     "beam, the measured **illuminance oscillates** — one bright/dark cycle per revolution. "
+     "(See the real rig in the photo on the left.)"),
     ("4 · The raw signal",
      "The sensor trace is a near-**square wave**: high while the foil faces the laser, "
      "low while the tape does. Its period **T** is one revolution, so the rotation "

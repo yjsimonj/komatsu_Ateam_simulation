@@ -31,9 +31,9 @@ def time_series_figure(res: SimResult, theme_key: str = "hybrid") -> go.Figure:
     th = THEME.get(theme_key, THEME["hybrid"])
     fig = make_subplots(
         rows=3, cols=1, shared_xaxes=True, vertical_spacing=0.07,
-        subplot_titles=("기울임각 θ(t)  [deg]",
-                        "자전 각속도 ω(t)  [rad/s]",
-                        "세차 각속도 Ω(t) = |φ̇|  [rad/s]"),
+        subplot_titles=("Tilt angle θ(t)  [deg]",
+                        "Spin rate ω(t)  [rad/s]",
+                        "Precession rate Ω(t) = |φ̇|  [rad/s]"),
     )
     t = res.t
     # θ(t)
@@ -41,7 +41,7 @@ def time_series_figure(res: SimResult, theme_key: str = "hybrid") -> go.Figure:
                              line=dict(color=th["accent"], width=3)), row=1, col=1)
     theta_fall_deg = math.degrees(res.theta_fall)
     fig.add_hline(y=theta_fall_deg, line_dash="dot", line_color="red",
-                  annotation_text=f"몸체 접지 θ_쓰러짐={theta_fall_deg:.0f}°",
+                  annotation_text=f"body touches floor θ_fall={theta_fall_deg:.0f}°",
                   annotation_position="bottom right", row=1, col=1)
 
     # ω(t) + ω_임계 가로선
@@ -49,18 +49,18 @@ def time_series_figure(res: SimResult, theme_key: str = "hybrid") -> go.Figure:
                              line=dict(color="#2e86c1", width=3)), row=2, col=1)
     if math.isfinite(res.omega_crit):
         fig.add_hline(y=res.omega_crit, line_dash="dash", line_color="red",
-                      annotation_text="ω_임계", annotation_position="top right",
+                      annotation_text="ω_crit", annotation_position="top right",
                       row=2, col=1)
     if res.t_cross_crit is not None:
         fig.add_vline(x=res.t_cross_crit, line_dash="dot", line_color="orange",
-                      annotation_text="여기서부터 급격히 기울어짐",
+                      annotation_text="tilt grows rapidly from here",
                       row=2, col=1)
 
     # Ω(t)
     fig.add_trace(go.Scatter(x=t, y=np.abs(res.phi_dot), name="Ω",
                              line=dict(color="#27ae60", width=3)), row=3, col=1)
 
-    fig.update_xaxes(title_text="시간 t [s]", row=3, col=1)
+    fig.update_xaxes(title_text="time t [s]", row=3, col=1)
     fig.update_layout(height=620, showlegend=False, margin=dict(l=60, r=20, t=40, b=40),
                       plot_bgcolor="white", font=dict(size=14))
     fig.update_xaxes(gridcolor="#eee")
@@ -217,7 +217,7 @@ def comparison_bar(durations: dict) -> go.Figure:
     colors = [THEME.get(k, THEME["hybrid"])["body"] for k in names]
     fig = go.Figure(go.Bar(x=names, y=vals, marker_color=colors,
                            text=[f"{v:.1f}s" for v in vals], textposition="outside"))
-    fig.update_layout(title="기본값 회전 지속시간 비교", yaxis_title="지속시간 [s]",
+    fig.update_layout(title="Default spin-lifetime comparison", yaxis_title="lifetime [s]",
                       height=380, plot_bgcolor="white", font=dict(size=14),
                       margin=dict(l=50, r=20, t=50, b=40))
     return fig
@@ -236,10 +236,10 @@ def trend_figure(x, y, xlabel: str, title: str) -> go.Figure:
     r2 = 1 - ss_res / ss_tot if ss_tot > 0 else 0.0
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=x, y=y, mode="markers", marker=dict(size=10, color="#2e86c1"),
-                             name="시뮬레이션"))
+                             name="simulation"))
     fig.add_trace(go.Scatter(x=x, y=yhat, mode="lines", line=dict(color="red", dash="dash"),
-                             name=f"선형적합 (R²={r2:.4f})"))
-    fig.update_layout(title=title, xaxis_title=xlabel, yaxis_title="지속시간 [s]",
+                             name=f"linear fit (R²={r2:.4f})"))
+    fig.update_layout(title=title, xaxis_title=xlabel, yaxis_title="lifetime [s]",
                       height=380, plot_bgcolor="white", font=dict(size=14),
                       margin=dict(l=60, r=20, t=50, b=45))
     return fig

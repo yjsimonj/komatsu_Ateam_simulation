@@ -17,6 +17,7 @@ from physics.integrator import InitialConditions, simulate
 from physics import constants as C
 from presets import PRESETS
 from ui import plots
+from ui import concept
 from ui.anim import make_top_gif
 from ui.research import RESEARCH
 
@@ -69,24 +70,24 @@ def panel_markdown(preset_key, AR, mass_g, cm_low, f_rim, mu, a_mm, omega0,
 
     rpm = s.omega_crit * 60 / (2 * math.pi) if math.isfinite(s.omega_crit) else float("inf")
     md = f"""
-#### 물리량
+#### Physical quantities
 | | |
 |--|--|
-| 질량 m | **{_fmt(s.m*1000,'g',3)}**{A('m',s.m)} |
-| 무게중심 l | **{_fmt(s.l*1000,'mm',3)}**{A('l',s.l)} |
-| 회전관성 I₃ | **{_fmt(s.I3*1e7,'g·cm²',3)}**{A('I3',s.I3)} |
-| 가로관성 I₁ | {_fmt(s.I1*1e7,'g·cm²',3)}{A('I1',s.I1)} |
-| 마찰 μ | {_fmt(s.mu,'',2)} |
+| Mass m | **{_fmt(s.m*1000,'g',3)}**{A('m',s.m)} |
+| Center of mass l | **{_fmt(s.l*1000,'mm',3)}**{A('l',s.l)} |
+| Spin inertia I₃ | **{_fmt(s.I3*1e7,'g·cm²',3)}**{A('I3',s.I3)} |
+| Transverse inertia I₁ | {_fmt(s.I1*1e7,'g·cm²',3)}{A('I1',s.I1)} |
+| Friction μ | {_fmt(s.mu,'',2)} |
 
-#### 안정성
+#### Stability
 | | |
 |--|--|
-| 임계 각속도 ω_crit | **{_fmt(s.omega_crit,'rad/s',3)}**{A('wc',s.omega_crit)} |
+| Critical spin ω_crit | **{_fmt(s.omega_crit,'rad/s',3)}**{A('wc',s.omega_crit)} |
 | | <sub>{rpm:.0f} rpm</sub> |
-| 세차율 Ω₀ | {_fmt(s.Omega0,'rad/s',3)} |
-| 예측 지속시간 | **{_fmt(s.t_pred,'s',3)}**{A('t',s.t_pred)} |
+| Precession rate Ω₀ | {_fmt(s.Omega0,'rad/s',3)} |
+| Predicted lifetime | **{_fmt(s.t_pred,'s',3)}**{A('t',s.t_pred)} |
 
-<sub>🔺/🔻 = 직전 대비 증감 · ω₀={omega0:.0f} rad/s 기준</sub>
+<sub>🔺/🔻 = change vs. previous · at ω₀={omega0:.0f} rad/s</sub>
 """
     new_prev = dict(m=s.m, l=s.l, I3=s.I3, I1=s.I1, wc=s.omega_crit, t=s.t_pred)
     return md, new_prev
@@ -96,33 +97,29 @@ def panel_markdown(preset_key, AR, mass_g, cm_low, f_rim, mu, a_mm, omega0,
 # 시뮬레이션 실행 → 그래프/3D/요약
 # ---------------------------------------------------------------------------
 def launch(preset_key, AR, mass_g, cm_low, f_rim, mu, a_mm, omega0, theta0_deg,
-           precise, steady, whip_count, whip_delta):
+           precise, steady):
     p = _structure(preset_key, AR, mass_g, cm_low, f_rim, mu, a_mm)
     model, inr, s = compute_physics(p, omega0, precise_friction=precise)
 
-    drive = PRESETS[preset_key].drive
-    # 줄(단발 고속)에서는 채찍질 비활성
-    wc = int(whip_count) if drive in ("whip", "both") else 0
     ic = InitialConditions(omega0=omega0, theta0=math.radians(theta0_deg),
-                           steady_precession=steady,
-                           whip_count=wc, whip_delta=whip_delta)
+                           steady_precession=steady)
     res = simulate(inr, model.mu, model.a, model.b, model.c, ic,
                    dt=SIM_DT, t_max=SIM_TMAX, sample_dt=SIM_SAMPLE_DT,
                    precise_friction=precise, gamma=PIVOT_GAMMA,
                    theta_fall=fall_angle(model))
 
     ts_fig = plots.time_series_figure(res, preset_key)
-    gif_path = make_top_gif(model, res, preset_key)   # 자동 재생 GIF
+    gif_path = make_top_gif(model, res, preset_key)   # auto-playing GIF
 
-    status = "쓰러짐 ✅" if res.fell else f"{SIM_TMAX:.0f}s 동안 직립 유지"
+    status = "fell over ✅" if res.fell else f"stayed upright for {SIM_TMAX:.0f}s"
     cross = f"{res.t_cross_crit:.2f} s" if res.t_cross_crit is not None else "—"
+    fall_deg = math.degrees(res.theta_fall)
     summary = f"""
-### 결과 요약
-- **회전 지속시간: {res.duration:.2f} s** ({status})
-- 직립시간(θ<{math.degrees(C.THETA_UPRIGHT):.0f}°): **{res.upright_time:.2f} s**
-- 임계 각속도 통과 시각: {cross}  ·  ω_임계 = {res.omega_crit:.2f} rad/s
-- 구동: **{'채찍(재가속)' if drive=='whip' else '줄(단발 고속)' if drive=='string' else '채찍+줄'}**
-  {f'· 채찍질 {wc}회 (+{whip_delta:.0f} rad/s/회)' if wc>0 else ''}
+### Result summary
+- **Spin lifetime: {res.duration:.2f} s** ({status})
+- Upright time (θ<{math.degrees(C.THETA_UPRIGHT):.0f}°): **{res.upright_time:.2f} s**
+- Body touches floor at θ = **{fall_deg:.0f}°** (fall criterion)
+- Crossed critical spin at: {cross}  ·  ω_crit = {res.omega_crit:.2f} rad/s
 """
     return ts_fig, gif_path, summary
 
@@ -157,7 +154,7 @@ def verify_mode():
         res = simulate(inr, m.mu, m.a, 0, 0, InitialConditions(omega0=300, theta0=math.radians(4)),
                        dt=SIM_DT, t_max=200, sample_dt=0.2, theta_fall=fall_angle(m))
         I3s.append(inr.I3 * 1e7); d1.append(res.duration)
-    fig1 = plots.trend_figure(I3s, d1, "I₃ [g·cm²]", "t_지속 ∝ I₃")
+    fig1 = plots.trend_figure(I3s, d1, "I₃ [g·cm²]", "lifetime t ∝ I₃")
 
     p0 = StructureParams(AR=2.0, mass_g=120, cm_low=0.6, f_rim=0.5, a_mm=1.5, mu=0.1)
     m0 = build_top(p0); inr0 = compute_inertia(m0)
@@ -166,7 +163,7 @@ def verify_mode():
         res = simulate(inr0, mu, m0.a, 0, 0, InitialConditions(omega0=300, theta0=math.radians(4)),
                        dt=SIM_DT, t_max=250, sample_dt=0.2, theta_fall=fall_angle(m0))
         inv.append(1.0 / mu); d2.append(res.duration)
-    fig2 = plots.trend_figure(inv, d2, "1/μ", "t_지속 ∝ 1/μ")
+    fig2 = plots.trend_figure(inv, d2, "1/μ", "lifetime t ∝ 1/μ")
     return fig1, fig2
 
 
@@ -177,91 +174,120 @@ def preset_updates(preset_key):
     pr = PRESETS[preset_key]
     def upd(r):
         return gr.update(minimum=r.lo, maximum=r.hi, value=r.default)
-    drive_label = {"whip": "채찍(반복 재가속)", "string": "줄(단발 고속)",
-                   "both": "채찍+줄 모두"}[pr.drive]
-    whip_visible = pr.drive in ("whip", "both")
     return (
         upd(pr.AR), upd(pr.mass_g), upd(pr.cm_low), upd(pr.f_rim),
         upd(pr.mu), upd(pr.a_mm), upd(pr.omega0),
-        f"**구동:** {drive_label}",
-        gr.update(visible=whip_visible),
-        gr.update(visible=whip_visible),
     )
 
 
 # ===========================================================================
-# UI 빌드
+# Page 3 — Concept: measuring spin rate with a laser + Fourier transform
+# ===========================================================================
+def _build_concept_tab():
+    with gr.Tab("🔦 How we measured ω (laser + FFT)"):
+        gr.Markdown("## Measuring the spin rate ω with a laser and a Fourier transform\n"
+                    "This page explains the **measurement method** from our real experiment — "
+                    "it is a concept walkthrough, not a parametric simulation. Use **Prev / Next** "
+                    "to step through the idea.")
+        with gr.Row():
+            # Left: stepper text + photo of the real setup
+            with gr.Column(scale=1):
+                step_state = gr.State(0)
+                step_box = gr.Markdown(concept.step_md(0))
+                with gr.Row():
+                    prev_b = gr.Button("◀ Prev")
+                    next_b = gr.Button("Next ▶", variant="primary")
+                gr.Markdown("#### Real experiment photo")
+                photo = gr.Image(value=concept.PHOTO_PATH, type="filepath",
+                                 label="half foil / half black tape, laser + light sensor",
+                                 height=260)
+                if concept.PHOTO_PATH is None:
+                    gr.Markdown("<sub>📷 Drop the real measurement photo into "
+                                "`ui/concept.py` (`PHOTO_PATH`) to show it here.</sub>")
+            # Right: schematic + signal + FFT
+            with gr.Column(scale=1):
+                gr.Plot(concept.setup_diagram())
+                gr.Plot(concept.illuminance_figure())
+                gr.Plot(concept.fft_figure())
+
+        def _step(cur, delta):
+            nxt = max(0, min(cur + delta, len(concept.STEPS) - 1))
+            return nxt, concept.step_md(nxt)
+
+        prev_b.click(lambda c: _step(c, -1), inputs=step_state, outputs=[step_state, step_box])
+        next_b.click(lambda c: _step(c, +1), inputs=step_state, outputs=[step_state, step_box])
+
+
+# ===========================================================================
+# UI build
 # ===========================================================================
 def build_app():
-    with gr.Blocks(title="한·일 팽이 회전 안정성 시뮬레이션") as demo:
-        gr.Markdown("# 🌀 한·일 팽이 회전 안정성 연구 & 물리 시뮬레이션\n"
-                    "대전과학고 × 고마쯔고 국제교류 A조 · 구조 → 물리량 → 회전 안정성")
+    with gr.Blocks(title="Korea–Japan Spinning-Top Rotational Stability") as demo:
+        gr.Markdown("# 🌀 Korea–Japan Spinning-Top Stability — Research & Physics Simulation\n"
+                    "Daejeon Science HS × Komatsu HS, Team A · structure → physical quantity → stability")
 
         with gr.Tabs():
-            # ---------------- 페이지 1: 연구 소개 ----------------
+            # ---------------- Page 1: Research (multilingual) ----------------
             with gr.Tab("📖 연구 소개 (Research)"):
                 lang = gr.Radio(["ko", "en", "ja"], value="ko", label="언어 / Language / 言語")
                 research_md = gr.Markdown(RESEARCH["ko"], latex_delimiters=LATEX)
                 lang.change(lambda l: RESEARCH[l], inputs=lang, outputs=research_md)
 
-            # ---------------- 페이지 2: 시뮬레이션 ----------------
-            with gr.Tab("🧪 물리 시뮬레이션 (Simulation)"):
+            # ---------------- Page 2: Simulation (English) ----------------
+            with gr.Tab("🧪 Physics Simulation"):
                 preset = gr.Radio(
-                    [("한국 팽이", "korean"), ("일본 코마", "japanese"), ("하이브리드", "hybrid")],
-                    value="korean", label="팽이 종류 (탭에 따라 구조 변수 범위가 제한됩니다)")
+                    [("Korean Top", "korean"), ("Japanese Koma", "japanese"), ("Hybrid", "hybrid")],
+                    value="korean", label="Top type (each preset limits the structure-variable ranges)")
 
                 with gr.Row():
-                    # ===== 좌: 구조 변수 + 파생 물리량 =====
+                    # ===== Left: structure variables + derived quantities =====
                     with gr.Column(scale=5):
                         with gr.Row():
-                            # 구조/구동 변수
+                            # structure / launch variables
                             with gr.Column(scale=1):
-                                gr.Markdown("### 구조 변수")
+                                gr.Markdown("### Structure variables")
                                 kr = PRESETS["korean"]
                                 AR = gr.Slider(kr.AR.lo, kr.AR.hi, kr.AR.default, step=0.05,
-                                               label="종횡비 AR", info="폭/높이 · 클수록 납작(편구)")
+                                               label="Aspect ratio AR", info="width/height · larger = flatter (oblate)")
                                 mass_g = gr.Slider(kr.mass_g.lo, kr.mass_g.hi, kr.mass_g.default, step=1,
-                                                   label="질량 (g)")
+                                                   label="Mass (g)")
                                 cm_low = gr.Slider(kr.cm_low.lo, kr.cm_low.hi, kr.cm_low.default, step=0.02,
-                                                   label="무게중심 낮춤", info="쇠심 효과 · 클수록 l↓")
+                                                   label="Lower the center of mass", info="metal-core effect · larger = lower l")
                                 f_rim = gr.Slider(kr.f_rim.lo, kr.f_rim.hi, kr.f_rim.default, step=0.02,
-                                                  label="테두리 질량 f_rim", info="클수록 I₃↑ (안정↑)")
+                                                  label="Rim mass f_rim", info="larger = higher I₃ (more stable)")
                                 mu = gr.Slider(kr.mu.lo, kr.mu.hi, kr.mu.default, step=0.01,
-                                               label="마찰 μ", info="작을수록 오래 돔")
+                                               label="Friction μ", info="smaller = spins longer")
                                 a_mm = gr.Slider(kr.a_mm.lo, kr.a_mm.hi, kr.a_mm.default, step=0.1,
-                                                 label="팁 곡률 a (mm)")
-                                gr.Markdown("### 구동·초기조건")
+                                                 label="Tip curvature a (mm)")
+                                gr.Markdown("### Launch / initial conditions")
                                 omega0 = gr.Slider(kr.omega0.lo, kr.omega0.hi, kr.omega0.default, step=5,
-                                                   label="초기 스핀 ω₀ (rad/s)")
-                                theta0 = gr.Slider(1, 15, 5, step=0.5, label="초기 기울기 θ₀ (°)")
-                                whip_count = gr.Slider(0, 6, 2, step=1, label="채찍질 횟수")
-                                whip_delta = gr.Slider(20, 200, 80, step=10, label="채찍 세기 (rad/s)")
+                                                   label="Initial spin ω₀ (rad/s)")
+                                theta0 = gr.Slider(1, 15, 5, step=0.5, label="Initial tilt θ₀ (°)")
                                 with gr.Row():
-                                    precise = gr.Checkbox(True, label="정밀 마찰")
-                                    steady = gr.Checkbox(True, label="정상세차 시작")
-                                drive_info = gr.Markdown(f"**구동:** 채찍(반복 재가속)")
-                                run_btn = gr.Button("▶ 시뮬레이션 실행", variant="primary", size="lg")
-                            # 파생 물리량 패널
+                                    precise = gr.Checkbox(True, label="Precise friction")
+                                    steady = gr.Checkbox(True, label="Start in steady precession")
+                                run_btn = gr.Button("▶ Run simulation", variant="primary", size="lg")
+                            # derived-quantities panel
                             with gr.Column(scale=1):
-                                gr.Markdown("### 파생 물리량 (구조 → 물리)")
+                                gr.Markdown("### Derived quantities (structure → physics)")
                                 panel = gr.Markdown()
 
-                    # ===== 우: 회전 애니메이션 + 그래프 + 결과 =====
+                    # ===== Right: rotation animation + graphs + result =====
                     with gr.Column(scale=5):
-                        d3 = gr.Image(label="🌀 팽이 회전 (초기 → 쓰러짐, 자동재생)",
+                        d3 = gr.Image(label="🌀 Top rotation (start → fall, auto-play)",
                                       type="filepath", height=340)
-                        summary = gr.Markdown("왼쪽에서 변수를 조절하고 **시뮬레이션 실행**을 누르세요.")
+                        summary = gr.Markdown("Adjust the variables on the left and press **Run simulation**.")
                         charts = gr.Plot(label="θ(t) / ω(t) / Ω(t)")
 
-                with gr.Accordion("📊 비교 모드 · 검증 모드", open=False):
+                with gr.Accordion("📊 Comparison & validation modes", open=False):
                     with gr.Row():
-                        cmp_btn = gr.Button("세 팽이 기본값 지속시간 비교")
-                        ver_btn = gr.Button("사전실험 경향 검증 (t∝I₃, t∝1/μ)")
+                        cmp_btn = gr.Button("Compare default lifetimes of the three tops")
+                        ver_btn = gr.Button("Validate pre-experiment trends (t∝I₃, t∝1/μ)")
                     cmp_plot = gr.Plot()
                     with gr.Row():
                         ver1 = gr.Plot(); ver2 = gr.Plot()
 
-                # ----- 상태 & 이벤트 배선 -----
+                # ----- state & event wiring -----
                 prev_state = gr.State(None)
                 struct_inputs = [preset, AR, mass_g, cm_low, f_rim, mu, a_mm, omega0, precise]
 
@@ -269,34 +295,36 @@ def build_app():
                     return panel_markdown(preset_key, AR, mass_g, cm_low, f_rim, mu,
                                           a_mm, omega0, precise, prev)
 
-                # 슬라이더 변경 → 패널 즉시 갱신(실행 전에도)
+                # slider change → live panel refresh (before running too)
                 for comp in [AR, mass_g, cm_low, f_rim, mu, a_mm, omega0, precise]:
                     comp.change(_panel, inputs=struct_inputs + [prev_state],
                                 outputs=[panel, prev_state])
 
-                # 탭 전환 → 슬라이더 범위 갱신 후 패널 갱신
+                # preset change → refresh slider ranges, then refresh panel
                 preset.change(preset_updates, inputs=preset,
-                              outputs=[AR, mass_g, cm_low, f_rim, mu, a_mm, omega0,
-                                       drive_info, whip_count, whip_delta]).then(
+                              outputs=[AR, mass_g, cm_low, f_rim, mu, a_mm, omega0]).then(
                     _panel, inputs=struct_inputs + [prev_state],
                     outputs=[panel, prev_state])
 
                 run_btn.click(
                     launch,
                     inputs=[preset, AR, mass_g, cm_low, f_rim, mu, a_mm, omega0, theta0,
-                            precise, steady, whip_count, whip_delta],
+                            precise, steady],
                     outputs=[charts, d3, summary])
 
                 cmp_btn.click(compare_defaults, outputs=cmp_plot)
                 ver_btn.click(verify_mode, outputs=[ver1, ver2])
 
-                # 초기 패널 렌더
+                # initial panel render
                 demo.load(_panel, inputs=struct_inputs + [prev_state],
                           outputs=[panel, prev_state])
 
-        gr.Markdown("---\n<sub>물리 엔진은 무거운 대칭 팽이(Heavy Symmetric Top) 운동방정식을 "
-                    "RK4 로 직접 적분하며, 관성모멘트는 회전체 적분으로 계산합니다. "
-                    "PRD §6.1·§6.2 / 검증 §7 준수.</sub>")
+            # ---------------- Page 3: Concept — laser/FFT spin measurement ----------------
+            _build_concept_tab()
+
+        gr.Markdown("---\n<sub>The physics engine integrates the Heavy Symmetric Top equations of "
+                    "motion directly with RK4; moments of inertia come from a solid-of-revolution "
+                    "integral. Conforms to PRD §6.1·§6.2 / validation §7.</sub>")
     return demo
 
 

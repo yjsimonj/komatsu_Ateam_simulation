@@ -22,9 +22,6 @@ class InitialConditions:
     omega0: float                 # 초기 스핀 ω₃(0) [rad/s]
     theta0: float = math.radians(5.0)   # 초기 기울임각 [rad]
     steady_precession: bool = True      # φ̇₀ 를 정상세차값으로 줄지(아니면 0)
-    whip_count: int = 0           # 채찍질 횟수(한국형 재가속, PRD §6.7)
-    whip_delta: float = 0.0       # 채찍질 1회당 ω₃ 펄스 [rad/s]
-    whip_until: float = 0.6       # 채찍질을 t_max 의 이 비율 시점까지 분산
 
 
 @dataclass
@@ -98,19 +95,6 @@ def simulate(inertia, mu: float, a: float, b: float, c: float,
 
     omega_crit = eq.omega_critical(inertia.m, inertia.l, inertia.I1, inertia.I3)
 
-    # 채찍질 스케줄(한국형): 자연 수명(ω₀→ω_임계 도달 시간) 안에서 균등 분산.
-    # t_max 기준으로 뿌리면 팽이가 먼저 쓰러져 채찍이 적용 안 되는 문제를 방지.
-    whip_times: List[float] = []
-    if ic.whip_count > 0 and ic.whip_delta > 0:
-        coeff = ((2.0 / 3.0) if precise_friction else 1.0) * mu * inertia.m * C.G * a
-        if coeff > 0 and ic.omega0 > omega_crit:
-            life = inertia.I3 * (ic.omega0 - omega_crit) / coeff   # 단발 예상 수명
-        else:
-            life = ic.whip_until * t_max
-        span = min(max(life, 0.5), t_max) * 0.9
-        whip_times = [span * (i + 1) / (ic.whip_count + 1) for i in range(ic.whip_count)]
-    next_whip = 0
-
     ts, thetas, omegas, phis, psis, pdots, energies = [], [], [], [], [], [], []
 
     def record(t: float, s: np.ndarray):
@@ -133,14 +117,6 @@ def simulate(inertia, mu: float, a: float, b: float, c: float,
 
     n_max = int(math.ceil(t_max / dt))
     for _ in range(n_max):
-        # 채찍질 펄스 주입(스텝 경계에서): ω₃ 에 스핀 추가.
-        # 대칭축 각운동량 ΔL = I₃·Δω₃ 가 더해지므로 그 연직성분 cosθ·ΔL 만큼
-        # p_φ 도 함께 올려야 φ̇ 가 불연속/폭주하지 않는다(물리 일관성).
-        while next_whip < len(whip_times) and t >= whip_times[next_whip]:
-            state[4] += ic.whip_delta
-            state[5] += math.cos(state[0]) * P.I3 * ic.whip_delta
-            next_whip += 1
-
         state = list(rk4_step(state, P, dt))
         t += dt
 

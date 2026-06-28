@@ -120,7 +120,9 @@ def make_top_gif(model: TopModel, res: SimResult, theme_key: str = "hybrid") -> 
     z_aspect = ztop / (2 * lim)
 
     fig = plt.figure(figsize=(4.4, 4.4), dpi=85)
-    ax = fig.add_subplot(111, projection="3d")
+    # computed_zorder=False: 아티스트 간 깊이를 평균값으로 자동정렬하지 않고
+    # 우리가 지정한 zorder 를 따른다 → 바닥 면을 항상 팽이 뒤로 보낼 수 있다.
+    ax = fig.add_subplot(111, projection="3d", computed_zorder=False)
     ax.set_axis_off()
     fig.subplots_adjust(left=0, right=1, bottom=0.02, top=0.94)
 
@@ -132,35 +134,36 @@ def make_top_gif(model: TopModel, res: SimResult, theme_key: str = "hybrid") -> 
         i = idx[frame_k]
         R = _euler_zxz(res.phi[i], res.theta[i], psi_vis[i])
 
-        # 바닥 면(z=0 평면) — 팽이가 서 있는 지면.
-        # plot_surface 는 면 전체를 평균 깊이로 정렬하므로 큰 평면 하나면
-        # 팽이를 가린다. 잘게 나눈 격자로 그려 타일별 깊이정렬이 되게 한다.
-        fg = np.linspace(-lim, lim, 24)
-        fx, fy = np.meshgrid(fg, fg)
+        # 바닥 면(z=0 평면) — 팽이가 서 있는 지면. zorder 를 가장 낮게 줘
+        # 항상 팽이 뒤(아래)에 그려지게 한다(computed_zorder=False 와 함께).
+        fx, fy = np.meshgrid([-lim, lim], [-lim, lim])
         ax.plot_surface(fx, fy, np.zeros_like(fx), color="#e8e8e8",
-                        alpha=0.5, linewidth=0, antialiased=False,
-                        shade=False, rcount=24, ccount=24)
+                        alpha=0.55, linewidth=0, antialiased=False,
+                        shade=False, zorder=0)
+        # 바닥 그림자 원(접지 위치)
+        gr = 0.6 * R_max
+        ax.plot(gr * np.cos(gtheta), gr * np.sin(gtheta), np.zeros_like(gtheta),
+                color="#cccccc", lw=1, zorder=1)
 
         rot = (R @ flat).reshape(3, *shape)
         ax.plot_surface(rot[0], rot[1], rot[2], facecolors=facecol,
                         linewidth=0, antialiased=True, shade=True,
-                        rcount=shape[0], ccount=shape[1])
+                        rcount=shape[0], ccount=shape[1], zorder=5)
         # 테두리 후프
         if rim is not None:
             p = R @ rim
-            ax.plot(p[0], p[1], p[2], color=th["rim"], lw=3)
+            ax.plot(p[0], p[1], p[2], color=th["rim"], lw=3, zorder=6)
         # 자전축
         axv = R @ np.array([0, 0, H * 1.05])
-        ax.plot([0, axv[0]], [0, axv[1]], [0, axv[2]], color=th["axis"], lw=1.5, alpha=0.5)
+        ax.plot([0, axv[0]], [0, axv[1]], [0, axv[2]], color=th["axis"],
+                lw=1.5, alpha=0.5, zorder=6)
         # 누적 궤적
         tip = axis_tip[:i + 1]
         if len(tip) > 2:
-            ax.plot(tip[:, 0], tip[:, 1], tip[:, 2], color="#b0b0b0", lw=1.0, ls=":")
-        # 접촉점 + 바닥 그림자
-        ax.scatter([0], [0], [0], color="black", s=12)
-        gr = 0.6 * R_max
-        ax.plot(gr * np.cos(gtheta), gr * np.sin(gtheta), np.zeros_like(gtheta),
-                color="#cccccc", lw=1)
+            ax.plot(tip[:, 0], tip[:, 1], tip[:, 2], color="#b0b0b0",
+                    lw=1.0, ls=":", zorder=7)
+        # 접촉점
+        ax.scatter([0], [0], [0], color="black", s=12, zorder=8)
 
         ax.set_xlim(-lim, lim); ax.set_ylim(-lim, lim); ax.set_zlim(0, ztop)
         ax.set_box_aspect((1, 1, z_aspect))   # 등방 스케일(왜곡 없음)

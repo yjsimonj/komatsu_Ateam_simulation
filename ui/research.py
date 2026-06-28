@@ -23,7 +23,7 @@ SECTIONS = [
 RESEARCH_KO = r"""
 # 한·일 팽이 회전 안정성 연구
 ### 한국 팽이와 일본 코마 비교를 통한 회전 안정성 최적화 하이브리드 팽이 설계
-**대전과학고 × 고마쯔고 국제교류 A조** — 김묘경 · 이담비 · 주영준 · 이지호 · 발표 2026년 8월, 일본
+**대전과학고 × 고마쯔고 국제교류 A조** — 김묘경 · 이담비 · 주영준 · 이지호 · 발표 2026년 7월 말, 일본
 
 ---
 
@@ -151,10 +151,8 @@ $\theta(t)$ 수치적분(이 웹앱의 물리 엔진), Monte Carlo 설계공간 
 | 시기 | 내용 |
 | --- | --- |
 | ~7월 초 | 안정성 정의·지표 확정 |
-| 7월 중 | 모듈형 팽이·측정 리그 제작 |
-| 7월 말 | 사전실험 ($t$–$I_3$, $t$–$\mu$) |
-| 8월 초 | 발표 자료·시뮬레이션 정리 |
-| 8월 | 일본 발표·합동 공동연구(하이브리드 제작) |
+| 7월 중 | 모듈형 팽이·측정 리그 제작, 사전실험 ($t$–$I_3$, $t$–$\mu$) |
+| 7월 말 | 발표 자료·시뮬레이션 정리, **일본 발표**·합동 공동연구(하이브리드 제작) |
 
 ## 10. 아웃트로
 **기대결과:** $I_3,\,l,\,\mu$ 의 정량 관계, 한·일 형태–물리량 비교, 하이브리드 설계·검증.
@@ -167,7 +165,7 @@ $\theta(t)$ 수치적분(이 웹앱의 물리 엔진), Monte Carlo 설계공간 
 RESEARCH_EN = r"""
 # Korea–Japan Spinning-Top Rotational Stability Study
 ### Designing a hybrid top by comparing the Korean *paengi* and the Japanese *koma*
-**Daejeon Science HS × Komatsu HS, Team A** — Presented Aug 2026, Japan
+**Daejeon Science HS × Komatsu HS, Team A** — Presented late July 2026, Japan
 
 ## 1. Intro
 Before visiting Japan, the Korean team independently identifies the **physical factors that govern a
@@ -214,7 +212,7 @@ Korea/Japan **and** validate a hybrid. We fill it with simulation + measurement.
 RESEARCH_JA = r"""
 # 韓日コマ回転安定性の研究
 ### 韓国のコマと日本のこまの比較によるハイブリッドコマ設計
-**大田科学高 × 小松高 国際交流 Aチーム** — 2026年8月 日本にて発表
+**大田科学高 × 小松高 国際交流 Aチーム** — 2026年7月末 日本にて発表
 
 ## はじめに
 日本訪問の**前**に、韓国チームは「コマの回転安定性（倒れるまでの時間）を左右する物理的要因」を

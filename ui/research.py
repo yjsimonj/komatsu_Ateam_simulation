@@ -164,69 +164,258 @@ $\theta(t)$ 수치적분(이 웹앱의 물리 엔진), Monte Carlo 설계공간 
 
 RESEARCH_EN = r"""
 # Korea–Japan Spinning-Top Rotational Stability Study
-### Designing a hybrid top by comparing the Korean *paengi* and the Japanese *koma*
-**Daejeon Science HS × Komatsu HS, Team A** — Presented late July 2026, Japan
+### Designing a stability-optimized hybrid top by comparing the Korean *paengi* and the Japanese *koma*
+**Daejeon Science HS × Komatsu HS, Exchange Team A** — Kim Myo-gyeong · Lee Dam-bi · Joo Young-jun · Lee Ji-ho · Presented late July 2026, Japan
+
+---
 
 ## 1. Intro
-Before visiting Japan, the Korean team independently identifies the **physical factors that govern a
-top's rotational stability** (time-to-fall): the **spin moment of inertia $I_3$** and the
-**tip–floor friction $\mu$**. After the visit, both teams jointly design a **hybrid top**.
+Daejeon Science HS and Komatsu HS run a joint international-exchange study. **Before** the visit to Japan, the Korean team works alone to identify the **physical factors that govern a top's rotational stability** (the time until it falls). Those factors are the **spin moment of inertia $I_3$** and the **tip–floor friction $\mu$**; we look for the relationship between these variables and the spin lifetime. **After** the visit, both teams jointly find the structures that drive those physical variables and build a **hybrid top**.
 
 ## 2. Topic & Motivation
-Two traditions realize the *same physics* with *different shapes*, letting us cleanly separate the
-causal chain **shape → physical quantity → stability**.
+Two traditions realize the *same physics* (rotational stability) with *different shapes*. Comparing them lets us cleanly separate and optimize the causal chain **shape → physical quantity → stability**.
 
-$$\boxed{\text{Shape}}\to\boxed{\text{Physical quantity}}\to\boxed{\text{Stability}}$$
+**Three research questions**
+1. Which physical quantities decide rotational stability? ($I_3$, $\mu$, $l$ …)
+2. Which shape is favorable — Korean (prolate) vs Japanese (oblate)?
+3. Does fusing the two traditions give greater stability?
 
-## 4. Theory (key equations)
-$$\omega_{crit}=\frac{2\sqrt{mgl\,I_1}}{I_3},\qquad \Omega=\frac{mgl}{I_3\omega},\qquad
-t_{life}\approx\frac{I_3\omega_0}{\tfrac23\mu mga}$$
-$$\tau_{fric}=-\tfrac23\mu mga\cos\theta,\qquad \tau_{air}=-b\omega_3-c\omega_3^2$$
-$$\Rightarrow\ t_{life}\propto I_3,\qquad t_{life}\propto 1/\mu$$
+**Causal-structure diagram**
 
-A fast top **sleeps** (stays upright) because its angular momentum $L=I_3\omega$ is large; gravity only
-*reorients* $L$ (precession). Friction slowly reduces $\omega$; once $\omega<\omega_{crit}$, the tilt
-$\theta$ grows rapidly and the top falls.
+> **Shape** ⟶ **Physical quantity** ⟶ **Rotational stability**
+>
+> aspect ratio · mass distribution · center of mass · tip ⟶ $I_3,\ I_1,\ l,\ \mu$ ⟶ lifetime · $\omega_{crit}$ · precession · $\theta(t)$
 
-## 3. Korean vs Japanese
-Korean: wooden, **prolate** (tall), axis-concentrated mass (small $I_3$), higher friction, whip-driven.
-Japanese: metal, **oblate** (flat/wide), rim-concentrated mass (large $I_3$), low friction, string-driven.
-A long upright spin is the physics *"sleeping top"* state ($\omega>\omega_{crit}$). (A Korean term "잠을 잔다" is sometimes cited for this — source to be confirmed.)
-Japanese koma range from *beigoma* (metal) to the self-inverting *tippe top* (逆立ちごま).
+## 3. Korean vs Japanese tops
+| Item | Korean traditional top | Japanese beigoma / koma |
+| --- | --- | --- |
+| Material | wood-based (lower iron core) | metal-based (cast iron, high density) |
+| Body shape | cone / cylinder / peg (**prolate**) | flat disk (**oblate**) |
+| Aspect ratio (width/height) | small (tall) | large (flat, wide) |
+| Mass distribution | concentrated on axis → small $I_3$ | concentrated at rim → large $I_3$ |
+| Center of mass $l$ | low | formed low |
+| Tip / friction | relatively high friction | low friction, long-spin oriented |
+| Drive | whip — **repeated energy input** | string — **single high-speed launch** |
+| $I_3/I_1$ ratio | small (sleeping unfavorable) | large (sleeping favorable) |
 
-## Measuring ω — laser + Arduino + FFT
-Half of the top is wrapped in **aluminium foil** (bright) and half in **black tape** (dark); a **laser**
-hits the edge while it spins and a **light-sensor + Arduino** record the reflected light (one cycle per
-turn). A **short-time Fourier transform** of that signal peaks at the rotation frequency $f$, giving
-$\omega=2\pi f$. *Fall* is defined as the moment the body (not the tip) first touches the floor — the
-simulation uses the same criterion. See the **"How we measured ω" page** for an animated explanation.
+> ⚠️ Because shapes vary widely, we directly measure each real sample's $m,\,l,\,I_3,\,I_1,$ and tip shape and compare them as points in the design space. "Different shape ⇒ different physical quantities."
 
-## 5–10 Prior work, design, pre-experiment, simulation, schedule, outro
-Prior work: Moon (2012, *J. Early Childhood Educ.* 32(4)), Moon & Lee (2011, 31(4)), Kaaronen et al.,
-Kim et al. (2012), Rod Cross (2013, *Am. J. Phys.* 81(4), DOI 10.1119/1.4776195),
-Bächer et al. *Spin-It* (ACM TOG 33(4), SIGGRAPH 2014). Gap: few studies *quantitatively compare*
-Korea/Japan **and** validate a hybrid. We fill it with simulation + measurement.
-**Try the Simulation page to manipulate the structure variables yourself.**
+**Representative types** — Korea: **malpaengi** (flat head → cone → sharp tip; the best, longest spinner) · **janggu-paengi** (pointed at both ends) · **jul-paengi** (waisted, string-thrown) · **bagaji-paengi** (finger-spun). Japan: **nage-goma** (投げごま, string-thrown single high-speed launch) · **beigoma** (ベーゴマ, metal, stable) · **iron-rim / fighting koma** (鉄輪·喧嘩ごま, an outer iron ring maximizes $I_3$) · **Hakata / performance koma** (博多·曲ごま, wooden with a thin iron core, very long spin life) · **tippe top** (逆立ちごま, spins then flips itself over — tied to precession and rolling friction).
+
+> 💡 A long, upright spin is the **sleeping top** state in physics ($\omega>\omega_{crit}$). (A Korean expression *"jameul janda"* — "it sleeps" — is sometimes cited for this; **source to be confirmed**.)
+
+## 4. Theoretical background
+**(1) Gyroscopic stabilization** — a non-spinning top is in unstable equilibrium and falls. Spinning fast creates angular momentum $L = I_3\omega$; the gravitational torque $\tau = mgl\sin\theta$ acts perpendicular to $L$ and only slowly turns its *direction* → **precession**.
+
+**(2) Critical angular velocity (sleeping condition)**
+$$\omega_{crit} = \frac{2\sqrt{m\,g\,l\,I_1}}{I_3}$$
+Once $\omega < \omega_{crit}$, the tilt $\theta$ grows rapidly and the top falls.
+
+**(3) Precession rate**
+$$\Omega = \frac{m\,g\,l}{I_3\,\omega}$$
+The slower the spin, the faster the precession ($\Omega \propto 1/\omega$).
+
+**(4) Friction torque (main cause of spin decay)** — precise / simple form
+$$\tau_{fric} = -\tfrac{2}{3}\,\mu\,m\,g\,a\,\cos\theta \qquad \tau_{fric}\approx -\mu\,m\,g\,a$$
+
+**(5) Air-drag torque** $\;\tau_{visc} = -b\,\omega_3,\quad \tau_{turb} = -c\,\omega_3^2$
+
+**(6) Spin decay & lifetime (core of the pre-experiment)** — lifetime $t_{life}$
+$$I_3\frac{d\omega}{dt} = -\mu\,m\,g\,a \;\Rightarrow\; \omega(t)=\omega_0 - \frac{\mu m g a}{I_3}t \;\Rightarrow\; t_{life}\approx \frac{I_3\,\omega_0}{\mu\,m\,g\,a}$$
+
+⟹ $t_{life}\propto I_3$ (positive linear), $\;t_{life}\propto 1/\mu$ (inverse)
+
+**(7) Moment of inertia & parallel-axis theorem** $\;I=\int r^2\,dm,\quad I_1 = I_{1,cm} + m\,l^2$
+
+**(8) Bifilar-pendulum measurement** $\;I = \dfrac{m\,g\,b^2\,T^2}{4\pi^2 L}$
+
+> **Expected Q&A** — Q: Why doesn't a fast top fall? A: Its angular momentum is large, so gravity only redirects it ($\omega>\omega_{crit}$). Q: Why does it fall eventually? A: Friction reduces $\omega$ until $\omega<\omega_{crit}$.
+
+## 5. Prior research
+| # | Study | Key point |
+| --- | --- | --- |
+| 1 | Moon (2012), *J. Early Childhood Educ.* 32(4), 445–464 | Korean top structure: wood body + lower iron core, axis-centered mass |
+| 2 | Moon & Lee (2011), *J. Early Childhood Educ.* 31(4), 361–379 | malpaengi prolate, lower-mass concentration, whip sustained drive |
+| 3 | Kaaronen et al. (source TBC) | beigoma dynamics — authors/year to be confirmed |
+| 4 | Kim et al. (2012), Jeju Science HS | precession theory–experiment methodology (high-speed camera, Logger Pro) |
+| 5 | Rod Cross (2013), *Am. J. Phys.* 81(4), 280–289, DOI 10.1119/1.4776195 | tip/floor shape → precession & stability, rising/tippe top |
+| 6 | Bächer, Whiting, Bickel, Sorkine-Hornung, *Spin-It* (ACM TOG 33(4), SIGGRAPH 2014) | optimizing moment of inertia by internal mass redistribution |
+
+> **Research gap:** few studies *quantitatively compare* Korean and Japanese tops **and** validate a hybrid. We fill this gap with simulation + measurement.
+
+## 6. Experimental design
+We split the causal chain into two links.
+- **Physics → stability (pre-experiment):** directly measure/manipulate physical quantities and relate them to lifetime.
+- **Structure → physics (calibration experiment):** change structure variables and measure how the physical quantities respond.
+
+Three-stage plan: ① response-surface exploration → ② calibration map → ③ hybrid reverse-design & validation.
+**Five dependent metrics:** spin lifetime · critical angular velocity · precession period/amplitude · tilt $\theta(t)$ · upright time.
+
+## 6b. Variables & control
+- **Manipulated:** $I_3,\,m,\,l,\,a,\,\mu$
+- **Controlled:** $\omega_0$ (most important) · $\theta_0$ · floor · no wind, etc.
+- **Dependent:** the five metrics above
+- **Modular test top:** separate an on-axis mass ($m\cdot l$ knob) from an on-radius mass ($I_3$ knob). Three ways to change only $I_3$ at fixed appearance (add a rim · internal redistribution · material swap).
+- **Measurement/validation:** scale (mass) · knife-edge balance (center of mass) · bifilar pendulum (moment of inertia).
+
+> ⚠️ Radius redistribution ($f_{rim}$, AR) also changes $I_1$. Lifetime and precession involve only $I_3$ (clean), but the critical angular velocity couples $I_1 I_3$, so we also track the combined quantity $mgl\,I_1/I_3^2$.
+
+## 7. Pre-experiment
+- Prediction: $t\propto I_3$ (linear), $t\propto 1/\mu$ (inverse).
+- Friction-coefficient measurement: incline method $\mu=\tan\theta$ (block = tip material, surface = floor material).
+- Assumptions/limits: Coulomb-friction approximation; air drag is secondary.
+- **Fall definition:** spin lifetime = from release until **the body (excluding the tip) first touches the floor**. (This web app's simulation uses the same criterion — fall is judged at the angle where the *body's outer surface meets the floor*, not at 90° where the symmetry axis is horizontal.)
+- **Initial-spin control:** a motor + a 3D-pen "motor cap" spins the top for a fixed time, then lifts off vertically, giving a consistent $\omega_0$ (avoiding the scatter of rubber-band / manual winding).
+
+**Measuring ω — laser + Arduino + Fourier transform** (→ see the third tab for an animated explanation)
+Half of the top's side is wrapped in **aluminium foil (bright)** and half in **black insulating tape (dark)**; while it spins a **laser** is aimed at it and a **light sensor + Arduino** record the reflected light. Bright/dark repeats once per revolution, so the signal frequency $f$ is the rotation rate, and the peak of a **short-time Fourier transform (STFT)** gives $\omega = 2\pi f$. Resolution $\Delta f = f_s/N$; Nyquist $f_s>2f_{max}$. In our rig the sensor read *higher when darker*.
+> ⚠️ Current limitation: with the tip held in place, **the laser cannot follow the precession, so the error is large**. In the second semester we will refine the rig with a 3D printer / science-kit parts and improve laser alignment + STFT. For now we read **trends** only.
+
+## 8. Real experiment & simulation
+Three-stage integration: response surface → calibration map → hybrid reverse-design & validation.
+$\theta(t)$ numerical integration (this web app's physics engine), Monte-Carlo design-space search, prediction vs measurement.
+→ **Try it yourself on the [Simulation page].**
+
+## 9. Roles & schedule
+| When | What |
+| --- | --- |
+| ~early July | fix the stability definition & metrics |
+| mid July | build the modular top & measurement rig; pre-experiment ($t$–$I_3$, $t$–$\mu$) |
+| late July | finalize slides & simulation, **present in Japan**, joint study (build the hybrid) |
+
+## 10. Outro
+**Expected results:** quantitative relations of $I_3,\,l,\,\mu$; Korea–Japan shape–physics comparison; hybrid design & validation.
+**Significance:** cultural exchange + physics/engineering fusion. **Future work:** make tip shape/material independent variables, top-collision stability, design-space expansion.
+
+> 감사합니다 · Thank you · ありがとうございました
 """
 
 RESEARCH_JA = r"""
 # 韓日コマ回転安定性の研究
-### 韓国のコマと日本のこまの比較によるハイブリッドコマ設計
-**大田科学高 × 小松高 国際交流 Aチーム** — 2026年7月末 日本にて発表
+### 韓国のコマ（ペンイ）と日本のこまの比較による回転安定性最適化ハイブリッドコマの設計
+**大田科学高 × 小松高 国際交流 Aチーム** — キム・ミョギョン · イ・ダムビ · チュ・ヨンジュン · イ・ジホ · 2026年7月末 日本にて発表
 
-## はじめに
-日本訪問の**前**に、韓国チームは「コマの回転安定性（倒れるまでの時間）を左右する物理的要因」を
-明らかにします。その要因は**回転慣性 $I_3$** と**接地点–床の摩擦 $\mu$** です。訪問**後**は両チームで
-**ハイブリッドコマ**を設計します。
+---
 
-## 主要な式
-$$\omega_{crit}=\frac{2\sqrt{mgl\,I_1}}{I_3},\qquad \Omega=\frac{mgl}{I_3\omega},\qquad
-t\approx\frac{I_3\omega_0}{\tfrac23\mu mga}$$
-$$\Rightarrow\ t\propto I_3,\qquad t\propto 1/\mu$$
+## 1. はじめに
+大田科学高と小松高が国際交流の共同研究を行います。日本訪問の**前**に、韓国チームが単独で行うのは「**コマの回転安定性（倒れるまでの時間）に影響する物理的要因**」の解明です。その要因は**回転慣性 $I_3$** と**接地点–床の摩擦 $\mu$** で、これらと持続時間の相関を調べます。訪問**後**は両国合同で、その物理量に影響する構造を見つけ、**ハイブリッドコマ**を製作します。
 
-韓国＝木製・**扁長(prolate)**・軸集中・高摩擦・むち駆動。
-日本＝金属・**扁球(oblate)**・外周集中・低摩擦・ひも駆動。
-**シミュレーションページで構造変数を操作してみてください。**
+## 2. テーマ紹介・選定背景
+同じ物理（回転安定性）を異なる形で実現した二つの伝統 — 韓国のコマと日本のこま — を比べると、「**形 → 物理量 → 安定性**」という因果構造をきれいに分離して最適化できます。
+
+**研究課題（3つ）**
+1. 回転安定性を決める物理量は何か？（$I_3$, $\mu$, $l$ …）
+2. どの形が有利か？ 韓国型（扁長）vs 日本型（扁球）
+3. 二つの伝統を融合するとより安定するか？
+
+**因果構造ダイアグラム**
+
+> **形（構造）** ⟶ **物理量** ⟶ **回転安定性**
+>
+> 縦横比・質量分布・重心・接地点 ⟶ $I_3,\ I_1,\ l,\ \mu$ ⟶ 持続時間・$\omega_{crit}$・歳差・$\theta(t)$
+
+## 3. コマの比較
+| 項目 | 韓国の伝統コマ | 日本のベーゴマ／こま |
+| --- | --- | --- |
+| 材質 | 木が中心（下部に鉄芯） | 金属が中心（鋳鉄など高密度） |
+| 形状 | 円錐・円筒・杭型（**扁長 prolate**） | 平たい円盤型（**扁球 oblate**） |
+| 縦横比（幅/高さ） | 小さい（細長い） | 大きい（平たく広い） |
+| 質量分布 | 軸中心に集中 → $I_3$ 小 | 外周に集中 → $I_3$ 大 |
+| 重心 $l$ | 低い | 低く設計 |
+| 接地点／摩擦 | 比較的高摩擦 | 低摩擦・長時間志向 |
+| 駆動方式 | むちで**繰り返しエネルギー供給** | ひもを巻いて**一度に高速** |
+| $I_3/I_1$ 比 | 小（sleeping に不利） | 大（sleeping に有利） |
+
+> ⚠️ 形のばらつきが大きいため、実物試料の $m,\,l,\,I_3,\,I_1,$ 接地形状を直接測定し、設計空間上の点として比較します。「形が違えば物理量も違う」。
+
+**代表的な種類** — 韓国：**マルペンイ**（平らな頭 → 円錐 → 尖った先端。最もよく長く回る型）· **チャングペンイ**（両端が尖る）· **チュルペンイ**（くびれ、ひもで投げる）· **パガジペンイ**（手でこする）。日本：**投げごま**（ひもで投げ単発高速）· **ベーゴマ**（金属・安定）· **鉄輪・喧嘩ごま**（外側の鉄輪で $I_3$ を最大化）· **博多・曲ごま**（細い鉄芯の木製、回転寿命が非常に長い）· **逆立ちごま**（回ると自ら反転する **tippe top**。歳差・転がり摩擦と直結）。
+
+> 💡 コマが長く直立して回る状態を物理では **sleeping top**（$\omega>\omega_{crit}$）と呼びます。（韓国でもこれを「眠る」と表現するという話があるが**出典確認が必要**。）
+
+## 4. 理論的背景
+**(1) ジャイロ安定化** — 静止したコマは不安定平衡で倒れます。速く自転すると角運動量 $L = I_3\omega$ が生じ、重力トルク $\tau = mgl\sin\theta$ が $L$ に垂直に働いて $L$ の*向き*だけをゆっくり回す → **歳差運動**。
+
+**(2) 臨界角速度（sleeping 条件）**
+$$\omega_{crit} = \frac{2\sqrt{m\,g\,l\,I_1}}{I_3}$$
+$\omega < \omega_{crit}$ になると $\theta$ が急増して倒れます。
+
+**(3) 歳差角速度**
+$$\Omega = \frac{m\,g\,l}{I_3\,\omega}$$
+自転が遅いほど歳差は速くなります（$\Omega \propto 1/\omega$）。
+
+**(4) 摩擦トルク（自転減衰の主因）** — 精密形／簡易形
+$$\tau_{fric} = -\tfrac{2}{3}\,\mu\,m\,g\,a\,\cos\theta \qquad \tau_{fric}\approx -\mu\,m\,g\,a$$
+
+**(5) 空気抵抗トルク** $\;\tau_{visc} = -b\,\omega_3,\quad \tau_{turb} = -c\,\omega_3^2$
+
+**(6) 自転減衰と持続時間（事前実験の核心）** — 持続時間 $t_{life}$
+$$I_3\frac{d\omega}{dt} = -\mu\,m\,g\,a \;\Rightarrow\; \omega(t)=\omega_0 - \frac{\mu m g a}{I_3}t \;\Rightarrow\; t_{life}\approx \frac{I_3\,\omega_0}{\mu\,m\,g\,a}$$
+
+⟹ $t_{life}\propto I_3$（正の線形）, $\;t_{life}\propto 1/\mu$（反比例）
+
+**(7) 慣性モーメントと平行軸の定理** $\;I=\int r^2\,dm,\quad I_1 = I_{1,cm} + m\,l^2$
+
+**(8) 二線式振り子の測定式** $\;I = \dfrac{m\,g\,b^2\,T^2}{4\pi^2 L}$
+
+> **想定 Q&A** — Q: なぜ速いと倒れない？ A: 角運動量が大きく、重力トルクは向きを変えるだけ（$\omega>\omega_{crit}$）。 Q: なぜ最後は倒れる？ A: 摩擦が $\omega$ を減らし $\omega<\omega_{crit}$ になるから。
+
+## 5. 先行研究
+| # | 先行研究 | 要点 |
+| --- | --- | --- |
+| 1 | ムン・ミオク(2012), 幼児教育研究 32(4), 445–464 | 韓国コマの構造：木の本体＋下部鉄芯、軸中心の質量 |
+| 2 | ムン・ミオク／イ・ジイェ(2011), 幼児教育研究 31(4), 361–379 | マルペンイ扁長・下部質量集中・むち持続駆動 |
+| 3 | Kaaronen 他（出典確認中） | ベーゴマ動力学 — 著者・年を確認後に正式記載 |
+| 4 | キム・セヨン他(2012), 済州科学高 | 歳差の理論・実験比較の方法論（高速カメラ・Logger Pro） |
+| 5 | Rod Cross(2013), *Am. J. Phys.* 81(4), 280–289, DOI 10.1119/1.4776195 | 接地点／床の形状 → 歳差・安定性、rising/tippe top |
+| 6 | Bächer・Whiting・Bickel・Sorkine-Hornung, *Spin-It* (ACM TOG 33(4), SIGGRAPH 2014) | 内部の質量再配分による慣性モーメント最適化 |
+
+> **先行研究の空白：** 韓日コマを*定量比較*し、さらにハイブリッドを検証した研究は少ない。本研究はシミュレーション＋実測でこの空白を埋める。
+
+## 6. 実験設計
+因果の鎖を二つの環に分けます。
+- **物理 → 安定性（事前実験）：** 物理量を直接測定・操作し持続時間との関係を解明。
+- **構造 → 物理（較正実験）：** 構造変数を変え物理量がどう変わるかを測定。
+
+3段階計画：① 応答曲面の探索 → ② 較正マップ作成 → ③ ハイブリッドの逆設計・検証。
+**従属変数5指標：** 回転持続時間 · 臨界角速度 · 歳差周期/振幅 · 傾き $\theta(t)$ · 直立時間。
+
+## 6b. 変数の設定と統制
+- **操作変数：** $I_3,\,m,\,l,\,a,\,\mu$
+- **統制変数：** $\omega_0$（最重要）· $\theta_0$ · 床 · 無風 など
+- **従属変数：** 上記5指標
+- **モジュール式試験コマ：** 軸上質量（$m\cdot l$ つまみ）と半径上質量（$I_3$ つまみ）を分離。外形を固定して $I_3$ だけ変える3手法（縁の追加・内部再配分・材質交換）。
+- **測定・検証：** 秤（質量）· ナイフエッジ平衡（重心）· 二線式振り子（慣性モーメント）。
+
+> ⚠️ 半径の再配置（$f_{rim}$, AR）は $I_1$ も変えます。持続時間・歳差は $I_3$ のみで清浄ですが、臨界角速度は $I_1 I_3$ の結合なので結合量 $mgl\,I_1/I_3^2$ も併せて見ます。
+
+## 7. 事前実験
+- 予測：$t\propto I_3$（線形）, $t\propto 1/\mu$（反比例）。
+- 摩擦係数の測定：斜面法 $\mu=\tan\theta$（ブロック＝接地材、面＝床材）。
+- 仮定・限界：クーロン摩擦近似、空気抵抗は二次的。
+- **倒れの定義：** コマを離した瞬間から**接地点を除いた底面が床に触れ始めた瞬間**までを回転持続時間とする。（本ウェブアプリのシミュレーションも同様に、対称軸が水平になる90°ではなく*本体の外面が床に触れる角*で倒れと判定します。）
+- **初期角速度の統制：** モーター＋3Dペンで作った「モーター差込キャップ」で一定時間回した後、垂直に分離して $\omega_0$ を一定に揃える（ゴム・手巻き方式のばらつきを克服）。
+
+**角速度の測定 — レーザー＋Arduino＋フーリエ変換**（→ 3番目のタブでアニメーション解説）
+コマの側面を**半分はアルミ箔（明）、半分は黒い絶縁テープ（暗）**で覆い、回転させながら**レーザー**を当て、反射光を**光センサー＋Arduino**で測定する。1回転ごとに明暗が1回繰り返されるので信号周波数 $f$ が回転数であり、**（短時間）フーリエ変換(STFT)** のピークから $\omega = 2\pi f$ を得る。分解能 $\Delta f = f_s/N$、ナイキスト $f_s>2f_{max}$。本装置ではセンサー値が*暗いほど高く*出た。
+> ⚠️ 現状の限界：接地点を固定した測定のため**レーザーが歳差に追従できず誤差が大きい**。2学期に3Dプリンター・科学キットで測定リグを精密化し、レーザー整列＋STFTで改善予定。現時点では**傾向**のみ解釈。
+
+## 8. 本実験・シミュレーション
+3段階の統合：応答曲面 → 較正マップ → ハイブリッドの逆設計・検証。
+$\theta(t)$ の数値積分（本ウェブアプリの物理エンジン）、モンテカルロ設計空間探索、予測 vs 実測。
+→ **[シミュレーションページ]で直接操作してみてください。**
+
+## 9. 役割分担・日程
+| 時期 | 内容 |
+| --- | --- |
+| ～7月初 | 安定性の定義・指標を確定 |
+| 7月中 | モジュール式コマ・測定リグ製作、事前実験（$t$–$I_3$, $t$–$\mu$） |
+| 7月末 | 発表資料・シミュレーション整理、**日本で発表**・合同共同研究（ハイブリッド製作） |
+
+## 10. アウトロ
+**期待される結果：** $I_3,\,l,\,\mu$ の定量関係、韓日の形–物理量比較、ハイブリッドの設計・検証。
+**意義：** 文化交流＋物理・工学の融合。**今後の課題：** 接地点形状・材質の独立変数化、コマ衝突の安定性、設計空間の拡張。
+
+> 감사합니다 · Thank you · ありがとうございました
 """
 
 RESEARCH = {"ko": RESEARCH_KO, "en": RESEARCH_EN, "ja": RESEARCH_JA}

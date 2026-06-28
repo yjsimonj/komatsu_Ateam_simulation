@@ -47,15 +47,16 @@ _TURNS = 6.0          # how many revolutions across the whole clip
 _LASER_ANGLE = 0.0    # the laser hits the rightmost point of the top (angle 0)
 
 
-def _brightness(phase: float) -> float:
-    """Reflected illuminance when the foil/tape boundary is at angle `phase`.
+def _reading(phase: float) -> float:
+    """Arduino light-sensor reading when the foil/tape boundary is at `phase`.
 
-    Foil covers [phase, phase+π); the laser hits angle 0. Bright while foil
-    faces the beam, dark otherwise — a near-square wave once per revolution.
+    Foil covers [phase, phase+π); the laser hits angle 0. In our rig the sensor
+    reads **higher when it is darker** — i.e. high while the black tape faces the
+    beam, low while the foil faces it. A near-square wave once per revolution.
     """
     rel = (_LASER_ANGLE - phase) % (2 * math.pi)
     foil = rel < math.pi
-    return (0.92 if foil else 0.12)
+    return (0.12 if foil else 0.92)   # dark (tape) → high reading
 
 
 def make_concept_gif() -> str:
@@ -66,8 +67,8 @@ def make_concept_gif() -> str:
     frac = k / (_N_FRAMES - 1)
     phase = 2 * math.pi * _TURNS * (frac - 0.04 * frac * frac)   # gently slowing
     rng = np.random.default_rng(0)
-    lux = np.array([_brightness(p) for p in phase]) * 60 + 25
-    lux = lux + rng.normal(0, 1.3, size=lux.shape)
+    reading = np.array([_reading(p) for p in phase]) * 60 + 25
+    reading = reading + rng.normal(0, 1.3, size=reading.shape)
 
     fig = plt.figure(figsize=(7.4, 3.4), dpi=92)
     ax_top = fig.add_axes([0.02, 0.06, 0.40, 0.88])   # spinning top + laser
@@ -76,7 +77,7 @@ def make_concept_gif() -> str:
 
     def draw(i: int):
         ph = phase[i]
-        bright = _brightness(ph)
+        val = _reading(ph)            # high when the dark tape faces the laser
 
         # ---- left: top-view of the spinning top + laser + sensor ----
         ax_top.clear()
@@ -94,24 +95,25 @@ def make_concept_gif() -> str:
         ax_top.plot([2.5, 1.0], [0, 0], color=LASER, lw=2.2, zorder=5)
         ax_top.scatter([1.0], [0], s=70, color=LASER, zorder=6)
         ax_top.text(2.0, 0.22, "laser", color=LASER, fontsize=10)
-        # reflected ray toward the sensor, brightness-coded
+        # reflected ray toward the sensor, coded by the Arduino reading
+        # (thicker/stronger when the reading is high = dark tape facing the beam)
         ax_top.plot([1.0, 1.9], [0, 1.25], color=SENSOR,
-                    lw=1.0 + 3.0 * bright, alpha=0.25 + 0.7 * bright, zorder=4)
+                    lw=1.0 + 3.0 * val, alpha=0.25 + 0.7 * val, zorder=4)
         ax_top.scatter([1.9], [1.25], s=80, marker="s", color=SENSOR, zorder=6)
         ax_top.text(1.55, 1.42, "sensor", color=SENSOR, fontsize=10)
-        # little glow telling foil(bright) vs tape(dark) is facing the laser
-        ax_top.text(-1.45, -1.55, "foil → bright" if bright > 0.5 else "tape → dark",
-                    fontsize=10, color=("#a06a00" if bright > 0.5 else "#444"))
+        # label which half faces the beam and the resulting reading
+        ax_top.text(-1.45, -1.55, "tape (dark) → high" if val > 0.5 else "foil (bright) → low",
+                    fontsize=10, color=("#1c1c1c" if val > 0.5 else "#a06a00"))
 
-        # ---- right: illuminance trace drawing in live ----
+        # ---- right: Arduino reading trace drawing in live ----
         ax_sig.clear()
-        ax_sig.plot(k[:i + 1], lux[:i + 1], color=ACCENT, lw=1.8)
-        ax_sig.scatter([k[i]], [lux[i]], s=28, color=ACCENT, zorder=5)
+        ax_sig.plot(k[:i + 1], reading[:i + 1], color=ACCENT, lw=1.8)
+        ax_sig.scatter([k[i]], [reading[i]], s=28, color=ACCENT, zorder=5)
         ax_sig.set_xlim(0, _N_FRAMES - 1); ax_sig.set_ylim(10, 100)
-        ax_sig.set_title("light sensor — illuminance vs. time", fontsize=11)
-        ax_sig.set_xlabel("time", fontsize=10); ax_sig.set_ylabel("lux", fontsize=10)
+        ax_sig.set_title("Arduino light reading — higher when darker", fontsize=11)
+        ax_sig.set_xlabel("time", fontsize=10); ax_sig.set_ylabel("reading", fontsize=10)
         ax_sig.set_xticks([]); ax_sig.grid(alpha=0.25)
-        ax_sig.text(0.02, 0.93, "one bright/dark cycle = one revolution",
+        ax_sig.text(0.02, 0.93, "one dark/bright cycle = one revolution",
                     transform=ax_sig.transAxes, fontsize=9, color="#666")
 
     anim = animation.FuncAnimation(fig, draw, frames=_N_FRAMES, interval=1000 / _FPS)
@@ -128,8 +130,9 @@ def fft_figure() -> go.Figure:
     t = np.arange(int(dur * fs)) / fs
     rng = np.random.default_rng(0)
     phase = 2 * math.pi * f0 * t
-    lux = 55 + 35 * np.tanh(3.0 * np.sin(phase)) + rng.normal(0, 1.4, size=t.shape)
-    x = (lux - lux.mean()) * np.hanning(len(lux))
+    # dark→high reading: spikes up when the tape faces the beam (sign flipped)
+    reading = 55 - 35 * np.tanh(3.0 * np.sin(phase)) + rng.normal(0, 1.4, size=t.shape)
+    x = (reading - reading.mean()) * np.hanning(len(reading))
     spec = np.abs(np.fft.rfft(x))
     freq = np.fft.rfftfreq(len(x), 1.0 / fs)
     band = freq <= 80
@@ -160,9 +163,11 @@ A spinning top is too fast to read its rate by eye, so we make its reflection
 
 - **half aluminium foil** (bright) + **half black insulating tape** (dark),
 - a **laser** aimed at the edge while it spins,
-- a **light sensor + Arduino** recording the reflected **illuminance**.
+- a **light sensor + Arduino** recording the reflected light.
 
-Watch below: as the foil and tape sweep past the beam, the sensor reading
-oscillates — one bright/dark cycle per revolution. A **Fourier transform** of
-that signal peaks at the rotation frequency *f*, giving **ω = 2π·f**.
+In our rig the Arduino reading is **higher when it is darker** — so the value
+spikes up each time the black tape faces the beam. Watch below: as foil and tape
+sweep past the laser, the reading oscillates — one cycle per revolution. A
+**Fourier transform** of that signal peaks at the rotation frequency *f*,
+giving **ω = 2π·f**.
 """

@@ -27,7 +27,7 @@ import urllib.request
 #   Hugging Face Space → Settings → "Variables and secrets" → New variable
 #   name = CANVA_EMBED_URL, value = your Canva view link. (No commit needed.)
 # The env var, if set, overrides the value below.
-CANVA_EMBED_URL = "https://canva.link/ge1nm806t8ahhzh"
+CANVA_EMBED_URL = "https://www.canva.com/design/DAHNzzW7u0Y/MfiAERgN0uuu-jdszorX0Q/edit"
 
 
 def _source_url() -> str:

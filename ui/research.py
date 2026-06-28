@@ -66,7 +66,7 @@ RESEARCH_KO = r"""
 
 **대표 종류** — 한국: **말팽이**(평평한 머리 → 원뿔 → 뾰족한 끝, 가장 잘·오래 도는 형) · **장구팽이**(양끝 뾰족) · **줄팽이**(허리 잘록, 끈으로 던짐) · **바가지팽이**(손으로 비빔). 일본: **나게고마**(투げごま, 끈으로 던져 단발 고속) · **베이고마**(ベーゴマ, 금속·안정) · **철테/싸움 코마**(鉄輪·喧嘩ごま, 바깥 쇠테로 $I_3$ 극대화) · **박다/곡예 코마**(博多·曲ごま, 가는 쇠심 목재, 회전 수명 매우 김) · **역립 코마**(逆立ちごま, 돌다 스스로 뒤집히는 **tippe top**, 세차·구름마찰과 직결).
 
-> 💡 한국에서 팽이가 오래 똑바로 도는 상태를 **"잠을 잔다"**고 부르는데, 이는 물리학의 **sleeping top**($\omega>\omega_{crit}$) 과 정확히 일치합니다.
+> 💡 팽이가 오래 똑바로 도는 상태를 물리학에서 **sleeping top**($\omega>\omega_{crit}$)이라 부릅니다. (한국에서도 이를 *"잠을 잔다"*고 표현한다는 이야기가 있으나 **출처 확인 필요**.)
 
 ## 4. 이론적 배경
 **(1) 자이로 안정화** — 정지 팽이는 불안정 평형이라 쓰러집니다. 빠르게 자전하면 각운동량
@@ -193,7 +193,7 @@ $\theta$ grows rapidly and the top falls.
 ## 3. Korean vs Japanese
 Korean: wooden, **prolate** (tall), axis-concentrated mass (small $I_3$), higher friction, whip-driven.
 Japanese: metal, **oblate** (flat/wide), rim-concentrated mass (large $I_3$), low friction, string-driven.
-A long upright spin is called *"sleeping"* in Korean — exactly the physics term ($\omega>\omega_{crit}$).
+A long upright spin is the physics *"sleeping top"* state ($\omega>\omega_{crit}$). (A Korean term "잠을 잔다" is sometimes cited for this — source to be confirmed.)
 Japanese koma range from *beigoma* (metal) to the self-inverting *tippe top* (逆立ちごま).
 
 ## Measuring ω — laser + Arduino + FFT

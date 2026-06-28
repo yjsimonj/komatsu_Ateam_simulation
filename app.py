@@ -19,6 +19,7 @@ from presets import PRESETS
 from ui import plots
 from ui import concept
 from ui import gallery
+from ui import slides
 from ui.anim import make_top_gif
 from ui.research import RESEARCH
 
@@ -339,6 +340,12 @@ def build_app():
 
             # ---------------- Page 4: Gallery — user photos & videos ----------------
             _build_gallery_tab()
+
+            # ---------------- Page 5: Slides — Canva presentation (view-only) ----------------
+            with gr.Tab("📑 Slides"):
+                gr.Markdown("## Presentation slides\nView-only — click through the "
+                            "deck and use fullscreen to zoom. Editing is disabled.")
+                gr.HTML(slides.embed_html())
 
         gr.Markdown("---\n<sub>The physics engine integrates the Heavy Symmetric Top equations of "
                     "motion directly with RK4; moments of inertia come from a solid-of-revolution "
